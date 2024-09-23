@@ -602,7 +602,7 @@ export function MaterialDescriptionFormComponent() {
 
   const { getRootProps, getInputProps } = useDropzone({ onDrop });
 
-  const handleExcalidrawToggle = (event) => {
+  const handleExcalidrawToggle = (event: { preventDefault: () => void }) => {
     event.preventDefault(); // Prevent form submission
     setIsExcalidrawVisible(!isExcalidrawVisible);
   };
@@ -747,12 +747,7 @@ export function MaterialDescriptionFormComponent() {
                           saveToActiveFile: false, // Disable "Save to"
                           export: false, // Disable "Export image"
                         },
-                        welcomeScreen: {
-                          show: false, // Disable the welcome screen
-                        },
-                        menu: {
-                          show: false, // Disable the menu
-                        },
+
                       }}
                     />
                   ) : (
