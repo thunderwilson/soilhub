@@ -1,35 +1,4 @@
-type FormData = {
-  siteAddress: string;
-  siteHistory: string;
-  expectedConsignments: number;
-  consignmentDetails: ConsignmentDetail[];
-};
-
-type ConsignmentDetail = {
-  materialDescription: string;
-  expectedDeliveryDate: string;
-  expectedDuration: string;
-  expectedFrequency: string;
-  expectedVolume: string;
-  samplesTaken: string;
-  sampleMethod: string;
-  otherSampleMethod?: string;
-  sampleMethodAdditionalInfo: string;
-  soilCategorization: string;
-  otherSoilCategorization?: string;
-  soilCategorizationAdditionalInfo: string;
-  analyticalRows: AnalyticalRow[];
-};
-
-type AnalyticalRow = {
-  contaminant: string;
-  maximum: string;
-  minimum: string;
-  average: string;
-  leachable: string;
-};
-
-export const generateEmailContent = (formData: FormData): string => {
+export const generateEmailContent = (formData) => {
   let content = `
     <html>
       <head>
@@ -127,11 +96,7 @@ export const generateEmailContent = (formData: FormData): string => {
   return content
 };
 
-export const updateFormData = (
-  formDataRef: React.MutableRefObject<FormData>,
-  field: keyof FormData,
-  value: FormData[keyof FormData]
-): void => {
+export const updateFormData = (formDataRef, field, value) => {
   formDataRef.current = {
     ...formDataRef.current,
     [field]: value,

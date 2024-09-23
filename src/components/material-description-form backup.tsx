@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useRef, useEffect, useCallback, forwardRef } from "react"
+import React, { useState, useMemo, useRef, useEffect } from "react"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { Label } from "~/components/ui/label"
@@ -12,11 +12,9 @@ import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "~/components/ui/card"
 import { ChevronDown, ChevronUp, Plus, X, Mail, Eye, MinusIcon, PlusIcon, FileText } from "lucide-react"
-import { Excalidraw, exportToBlob } from "@excalidraw/excalidraw"
-import { ExcalidrawImperativeAPI, ExcalidrawProps } from "@excalidraw/excalidraw/types/types"
+import { Excalidraw, exportToBlob, exportToSvg } from "@excalidraw/excalidraw"
 import { Badge } from "~/components/ui/badge"
 import { useDropzone } from 'react-dropzone'
-import axios from 'axios';
 
 const defaultContaminants = [
   "Arsenic", "Cadmium", "Copper", "Chromium", "Mercury", "Nickel", "Zinc", "Asbestos P/A"
@@ -54,26 +52,6 @@ type ConsignmentDetail = {
   analyticalRows: AnalyticalRow[];
 }
 
-interface ExcalidrawWrapperProps {
-  onChange: () => void;
-  initialData: any;
-  ref: React.RefObject<ExcalidrawImperativeAPI>;
-}
-
-const ExcalidrawWrapper = forwardRef<ExcalidrawImperativeAPI, ExcalidrawWrapperProps>((props, ref) => (
-  <Excalidraw
-    onChange={props.onChange}
-    initialData={props.initialData}
-    UIOptions={{
-      canvasActions: {
-        loadScene: false,
-        saveToActiveFile: false,
-        export: false,
-      },
-    }}
-  />
-));
-
 export function MaterialDescriptionFormComponent() {
   const [consignments, setConsignments] = useState(1)
   const [openSections, setOpenSections] = useState<number[]>([])
@@ -86,26 +64,21 @@ export function MaterialDescriptionFormComponent() {
   const [destinationEmails, setDestinationEmails] = useState<string[]>([])
   const [currentEmail, setCurrentEmail] = useState("")
   const [customMessage, setCustomMessage] = useState("")
-  const [excalidrawAPI, setExcalidrawAPI] = useState<ExcalidrawImperativeAPI | null>(null)
-  const [initialData, setInitialData] = useState<any>(null)
+  const [showEmailPreview, setShowEmailPreview] = useState(false)
+  const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null)
+  const [initialData, setInitialData] = useState(null)
   const [excalidrawPNG, setExcalidrawPNG] = useState<string | null>(null)
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [isExcalidrawVisible, setIsExcalidrawVisible] = useState(false)
   const [replyToEmail, setReplyToEmail] = useState("")
-
-  const excalidrawAPIRef = useCallback((api: ExcalidrawImperativeAPI | null) => {
-    if (api) {
-      setExcalidrawAPI(api);
-    }
-  }, []);
 
   useEffect(() => {
     // Load the tutorial image
     fetch("/tutorial.excalidraw")
       .then((response) => response.json())
       .then((data) => {
-        console.log("Loaded tutorial data:", data);
-        setInitialData(data as any);
+        console.log("Loaded tutorial data:", data); // Add this log
+        setInitialData(data);
       })
       .catch((error) => console.error("Error loading tutorial data:", error));
   }, []);
@@ -165,8 +138,8 @@ export function MaterialDescriptionFormComponent() {
     updateFormData("expectedConsignments", validValue)
   }
 
-  const ConsignmentDetails: React.FC<{ index: number }> = React.memo(({ index }) => {
-    const consignmentData = formDataRef.current.consignmentDetails[index] ?? {}
+  const ConsignmentDetails = React.memo(({ index }: { index: number }) => {
+    const consignmentData = formDataRef.current.consignmentDetails[index] || {}
     const [localState, setLocalState] = useState<ConsignmentDetail>({
       materialDescription: "",
       expectedDeliveryDate: "",
@@ -351,7 +324,7 @@ export function MaterialDescriptionFormComponent() {
                     className="mt-2" 
                     placeholder="Please specify other sample method" 
                     id={`otherSampleMethodText-${index}`}
-                    value={localState.otherSampleMethod ?? ""}
+                    value={localState.otherSampleMethod || ""}
                     onChange={(e) => updateLocalState("otherSampleMethod", e.target.value)}
                   />
                 )}
@@ -394,7 +367,7 @@ export function MaterialDescriptionFormComponent() {
                     className="mt-2" 
                     placeholder="Please specify other soil categorization method" 
                     id={`otherSoilCategorizationText-${index}`}
-                    value={localState.otherSoilCategorization ?? ""}
+                    value={localState.otherSoilCategorization || ""}
                     onChange={(e) => updateLocalState("otherSoilCategorization", e.target.value)}
                   />
                 )}
@@ -628,77 +601,25 @@ export function MaterialDescriptionFormComponent() {
 
   const { getRootProps, getInputProps } = useDropzone({ onDrop });
 
-  const handleExcalidrawToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleExcalidrawToggle = (event) => {
     event.preventDefault(); // Prevent form submission
     setIsExcalidrawVisible(!isExcalidrawVisible);
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Here you would typically send the form data to your backend
+    console.log("Form submitted:", formDataRef.current)
     
-    // Generate the email content
-    const emailContent = generateEmailContent();
+    // For email functionality, you would integrate with your email service here
+    // This is a placeholder for the email sending logic
+    console.log("Sending email to:", destinationEmails)
+    console.log("Email content:", generateEmailContent())
+    console.log("Custom message:", customMessage)
 
-    // Prepare the data to be sent
-    const formData = {
-      emailDetails: {
-        to: destinationEmails,
-        replyTo: replyToEmail,
-        customMessage: customMessage,
-      },
-      siteInformation: {
-        siteAddress: formDataRef.current.siteAddress,
-        siteHistory: formDataRef.current.siteHistory,
-        expectedConsignments: formDataRef.current.expectedConsignments,
-      },
-      consignmentDetails: formDataRef.current.consignmentDetails.map((consignment, index) => ({
-        consignmentNumber: index + 1,
-        materialDescription: consignment.materialDescription,
-        expectedDeliveryDate: consignment.expectedDeliveryDate,
-        expectedDuration: consignment.expectedDuration,
-        expectedFrequency: consignment.expectedFrequency,
-        expectedVolume: consignment.expectedVolume,
-        samplingDetails: {
-          samplesTaken: consignment.samplesTaken,
-          sampleMethod: consignment.sampleMethod,
-          otherSampleMethod: consignment.otherSampleMethod,
-          sampleMethodAdditionalInfo: consignment.sampleMethodAdditionalInfo,
-          soilCategorization: consignment.soilCategorization,
-          otherSoilCategorization: consignment.otherSoilCategorization,
-          soilCategorizationAdditionalInfo: consignment.soilCategorizationAdditionalInfo,
-        },
-        analyticalSummary: consignment.analyticalRows,
-      })),
-      attachments: uploadedFiles.map(file => ({
-        name: file.name,
-        type: file.type,
-        size: file.size,
-      })),
-      htmlContent: emailContent,
-    };
-
-    try {
-      // Send the data to the webhook
-      const response = await axios.post(
-        'https://hook.us1.make.com/swsnm14i1t7qowyc3g4dmzo0ul2r0wrg',
-        formData,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (response.status === 200) {
-        alert("Form submitted successfully!");
-      } else {
-        throw new Error('Submission failed');
-      }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      alert("An error occurred while submitting the form. Please try again.");
-    }
-  };
+    // Show a success message or handle any next steps
+    alert("Form submitted and email sent successfully!")
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -763,10 +684,23 @@ export function MaterialDescriptionFormComponent() {
                 </Button>
                 <div className={`w-full h-[600px] border border-gray-300 rounded-md overflow-hidden ${isExcalidrawVisible ? '' : 'hidden'}`}>
                   {initialData ? (
-                    <ExcalidrawWrapper
+                    <Excalidraw
                       onChange={onExcalidrawChange}
                       initialData={initialData}
-                      ref={excalidrawAPIRef}
+                      excalidrawAPI={(api: any) => setExcalidrawAPI(api)}
+                      UIOptions={{
+                        canvasActions: {
+                          loadScene: false, // Disable "Open"
+                          saveToActiveFile: false, // Disable "Save to"
+                          export: false, // Disable "Export image"
+                        },
+                        welcomeScreen: {
+                          show: false, // Disable the welcome screen
+                        },
+                        menu: {
+                          show: false, // Disable the menu
+                        },
+                      }}
                     />
                   ) : (
                     <div>Loading tutorial...</div>
@@ -915,7 +849,7 @@ export function MaterialDescriptionFormComponent() {
                     <Input 
                       id="replyToEmail" 
                       type="email" 
-                      placeholder="Form will appear to come from this address. Replies will be sent here."
+                      placeholder="Form will appear to come from this address. Replies will go to this address."
                       className="bg-white"
                       value={replyToEmail}
                       onChange={(e) => setReplyToEmail(e.target.value)}
@@ -941,6 +875,7 @@ export function MaterialDescriptionFormComponent() {
                         className="w-full bg-green-200 hover:bg-green-300 text-green-800 border-green-400"
                         onClick={async () => {
                           await captureExcalidrawPNG();
+                          setShowEmailPreview(prev => !prev);
                         }}
                       >
                         <Eye className="mr-2 h-4 w-4" />
@@ -956,6 +891,7 @@ export function MaterialDescriptionFormComponent() {
                         <h3 className="font-bold">To: {destinationEmails.join(", ")}</h3>
                         <h3 className="font-bold mt-2">Custom Message:</h3>
                         <p>{customMessage}</p>
+                        {/* <h3 className="font-bold mt-4">Form Data:</h3> */}
                         <div dangerouslySetInnerHTML={{ __html: generateEmailContent() }} />
                         {uploadedFiles.length > 0 && (
                           <div className="mt-4">
