@@ -70,6 +70,7 @@ export function MaterialDescriptionFormComponent() {
   const [excalidrawPNG, setExcalidrawPNG] = useState<string | null>(null)
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [isExcalidrawVisible, setIsExcalidrawVisible] = useState(false)
+  const [replyToEmail, setReplyToEmail] = useState("")
 
   useEffect(() => {
     // Load the tutorial image
@@ -489,7 +490,7 @@ export function MaterialDescriptionFormComponent() {
           </style>
         </head>
         <body>
-          <h1>Material Description Form Summary</h1>
+          <h1></h1>
           
           <div class="section">
             <h2>Site Information</h2>
@@ -798,6 +799,7 @@ export function MaterialDescriptionFormComponent() {
                   <CardTitle className="text-green-800">Email Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+
                   <div>
                     <Label htmlFor="destinationEmail">Destination Email Addresses</Label>
                     <div className="flex space-x-2">
@@ -843,6 +845,17 @@ export function MaterialDescriptionFormComponent() {
                     )}
                   </div>
                   <div>
+                    <Label htmlFor="replyToEmail">'From/Reply To' Email Address</Label>
+                    <Input 
+                      id="replyToEmail" 
+                      type="email" 
+                      placeholder="Form will appear to come from this address. Replies will go to this address."
+                      className="bg-white"
+                      value={replyToEmail}
+                      onChange={(e) => setReplyToEmail(e.target.value)}
+                    />
+                  </div>
+                  <div>
                     <Label htmlFor="customMessage">Custom Message</Label>
                     <Textarea 
                       id="customMessage" 
@@ -874,10 +887,11 @@ export function MaterialDescriptionFormComponent() {
                         <DialogTitle className="text-xl font-bold text-green-800">Email Preview</DialogTitle>
                       </DialogHeader>
                       <div className="mt-4 p-4">
+                        <h3 className="font-bold">From: {replyToEmail}</h3>
                         <h3 className="font-bold">To: {destinationEmails.join(", ")}</h3>
                         <h3 className="font-bold mt-2">Custom Message:</h3>
                         <p>{customMessage}</p>
-                        <h3 className="font-bold mt-4">Form Data:</h3>
+                        {/* <h3 className="font-bold mt-4">Form Data:</h3> */}
                         <div dangerouslySetInnerHTML={{ __html: generateEmailContent() }} />
                         {uploadedFiles.length > 0 && (
                           <div className="mt-4">
@@ -910,7 +924,7 @@ export function MaterialDescriptionFormComponent() {
                 <CardFooter>
                   <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white">
                     <Mail className="mr-2 h-4 w-4" />
-                    Submit Form and Send Email
+                    Submit Form
                   </Button>
                 </CardFooter>
               </Card>
