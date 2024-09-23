@@ -602,12 +602,12 @@ export function MaterialDescriptionFormComponent() {
 
   const { getRootProps, getInputProps } = useDropzone({ onDrop });
 
-  const handleExcalidrawToggle = (event) => {
+  const handleExcalidrawToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault(); // Prevent form submission
     setIsExcalidrawVisible(!isExcalidrawVisible);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     // Generate the email content
@@ -746,12 +746,6 @@ export function MaterialDescriptionFormComponent() {
                           loadScene: false, // Disable "Open"
                           saveToActiveFile: false, // Disable "Save to"
                           export: false, // Disable "Export image"
-                        },
-                        welcomeScreen: {
-                          show: false, // Disable the welcome screen
-                        },
-                        menu: {
-                          show: false, // Disable the menu
                         },
                       }}
                     />

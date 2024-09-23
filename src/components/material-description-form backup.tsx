@@ -15,6 +15,7 @@ import { ChevronDown, ChevronUp, Plus, X, Mail, Eye, MinusIcon, PlusIcon, FileTe
 import { Excalidraw, exportToBlob, exportToSvg } from "@excalidraw/excalidraw"
 import { Badge } from "~/components/ui/badge"
 import { useDropzone } from 'react-dropzone'
+import axios from 'axios';
 
 const defaultContaminants = [
   "Arsenic", "Cadmium", "Copper", "Chromium", "Mercury", "Nickel", "Zinc", "Asbestos P/A"
@@ -601,25 +602,77 @@ export function MaterialDescriptionFormComponent() {
 
   const { getRootProps, getInputProps } = useDropzone({ onDrop });
 
-  const handleExcalidrawToggle = (event) => {
+  const handleExcalidrawToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault(); // Prevent form submission
     setIsExcalidrawVisible(!isExcalidrawVisible);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Here you would typically send the form data to your backend
-    console.log("Form submitted:", formDataRef.current)
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     
-    // For email functionality, you would integrate with your email service here
-    // This is a placeholder for the email sending logic
-    console.log("Sending email to:", destinationEmails)
-    console.log("Email content:", generateEmailContent())
-    console.log("Custom message:", customMessage)
+    // Generate the email content
+    const emailContent = generateEmailContent();
 
-    // Show a success message or handle any next steps
-    alert("Form submitted and email sent successfully!")
-  }
+    // Prepare the data to be sent
+    const formData = {
+      emailDetails: {
+        to: destinationEmails,
+        replyTo: replyToEmail,
+        customMessage: customMessage,
+      },
+      siteInformation: {
+        siteAddress: formDataRef.current.siteAddress,
+        siteHistory: formDataRef.current.siteHistory,
+        expectedConsignments: formDataRef.current.expectedConsignments,
+      },
+      consignmentDetails: formDataRef.current.consignmentDetails.map((consignment, index) => ({
+        consignmentNumber: index + 1,
+        materialDescription: consignment.materialDescription,
+        expectedDeliveryDate: consignment.expectedDeliveryDate,
+        expectedDuration: consignment.expectedDuration,
+        expectedFrequency: consignment.expectedFrequency,
+        expectedVolume: consignment.expectedVolume,
+        samplingDetails: {
+          samplesTaken: consignment.samplesTaken,
+          sampleMethod: consignment.sampleMethod,
+          otherSampleMethod: consignment.otherSampleMethod,
+          sampleMethodAdditionalInfo: consignment.sampleMethodAdditionalInfo,
+          soilCategorization: consignment.soilCategorization,
+          otherSoilCategorization: consignment.otherSoilCategorization,
+          soilCategorizationAdditionalInfo: consignment.soilCategorizationAdditionalInfo,
+        },
+        analyticalSummary: consignment.analyticalRows,
+      })),
+      attachments: uploadedFiles.map(file => ({
+        name: file.name,
+        type: file.type,
+        size: file.size,
+      })),
+      htmlContent: emailContent,
+    };
+
+    try {
+      // Send the data to the webhook
+      const response = await axios.post(
+        'https://hook.us1.make.com/swsnm14i1t7qowyc3g4dmzo0ul2r0wrg',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        alert("Form submitted successfully!");
+      } else {
+        throw new Error('Submission failed');
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      alert("An error occurred while submitting the form. Please try again.");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -693,12 +746,6 @@ export function MaterialDescriptionFormComponent() {
                           loadScene: false, // Disable "Open"
                           saveToActiveFile: false, // Disable "Save to"
                           export: false, // Disable "Export image"
-                        },
-                        welcomeScreen: {
-                          show: false, // Disable the welcome screen
-                        },
-                        menu: {
-                          show: false, // Disable the menu
                         },
                       }}
                     />
@@ -849,7 +896,7 @@ export function MaterialDescriptionFormComponent() {
                     <Input 
                       id="replyToEmail" 
                       type="email" 
-                      placeholder="Form will appear to come from this address. Replies will go to this address."
+                      placeholder="Form will appear to come from this address. Replies will be sent here."
                       className="bg-white"
                       value={replyToEmail}
                       onChange={(e) => setReplyToEmail(e.target.value)}
