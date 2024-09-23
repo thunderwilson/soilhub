@@ -11,9 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "~/components/ui/card"
-import { ChevronDown, ChevronUp, Plus, X, Mail, Eye, MinusIcon, PlusIcon } from "lucide-react"
-import { Excalidraw, exportToBlob, exportToSvg } from "@excalidraw/excalidraw";
+import { ChevronDown, ChevronUp, Plus, X, Mail, Eye, MinusIcon, PlusIcon, FileText } from "lucide-react"
+import { Excalidraw, exportToBlob, exportToSvg } from "@excalidraw/excalidraw"
 import { Badge } from "~/components/ui/badge"
+import { useDropzone } from 'react-dropzone'
 
 const defaultContaminants = [
   "Arsenic", "Cadmium", "Copper", "Chromium", "Mercury", "Nickel", "Zinc", "Asbestos P/A"
@@ -64,9 +65,11 @@ export function MaterialDescriptionFormComponent() {
   const [currentEmail, setCurrentEmail] = useState("")
   const [customMessage, setCustomMessage] = useState("")
   const [showEmailPreview, setShowEmailPreview] = useState(false)
-  const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
-  const [initialData, setInitialData] = useState(null);
-  const [excalidrawPNG, setExcalidrawPNG] = useState<string | null>(null);
+  const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null)
+  const [initialData, setInitialData] = useState(null)
+  const [excalidrawPNG, setExcalidrawPNG] = useState<string | null>(null)
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
+  const [isExcalidrawVisible, setIsExcalidrawVisible] = useState(false)
 
   useEffect(() => {
     // Load the tutorial image
@@ -471,7 +474,7 @@ export function MaterialDescriptionFormComponent() {
   })
 
   const generateEmailContent = () => {
-    const formData = formDataRef.current
+    const formData = formDataRef.current;
     let content = `
       <html>
         <head>
@@ -501,7 +504,7 @@ export function MaterialDescriptionFormComponent() {
               ? `<img src="${excalidrawPNG}" alt="Plan of Proposed Works" style="max-width: 100%; height: auto;">`
               : '<p>No plan uploaded. Please draw a plan using the Excalidraw tool.</p>'}
           </div>
-    `
+    `;
 
     formData.consignmentDetails.forEach((consignment, index) => {
       content += `
@@ -516,25 +519,25 @@ export function MaterialDescriptionFormComponent() {
           <h3>Sampling Information</h3>
           <p><strong>Number of Samples Taken:</strong> ${consignment.samplesTaken}</p>
           <p><strong>Sample Method:</strong> ${consignment.sampleMethod}</p>
-      `
+      `;
 
       if (consignment.sampleMethod === 'other') {
-        content += `<p><strong>Other Sample Method:</strong> ${consignment.otherSampleMethod}</p>`
+        content += `<p><strong>Other Sample Method:</strong> ${consignment.otherSampleMethod}</p>`;
       }
 
       content += `
           <p><strong>Additional Sampling Information:</strong> ${consignment.sampleMethodAdditionalInfo}</p>
           <p><strong>Soil Categorization:</strong> ${consignment.soilCategorization}</p>
-      `
+      `;
 
       if (consignment.soilCategorization === 'other') {
-        content += `<p><strong>Other Soil Categorization:</strong> ${consignment.otherSoilCategorization}</p>`
+        content += `<p><strong>Other Soil Categorization:</strong> ${consignment.otherSoilCategorization}</p>`;
       }
 
       content += `
           <p><strong>Additional Soil Categorization Information:</strong> ${consignment.soilCategorizationAdditionalInfo}</p>
           <h3>Analytical Summary</h3>
-      `
+      `;
 
       if (consignment.analyticalRows && consignment.analyticalRows.length > 0) {
         content += `
@@ -546,7 +549,7 @@ export function MaterialDescriptionFormComponent() {
               <th>Average (mg/kg)</th>
               <th>Leachable (mg/L)</th>
             </tr>
-        `
+        `;
 
         consignment.analyticalRows.forEach(row => {
           content += `
@@ -557,23 +560,23 @@ export function MaterialDescriptionFormComponent() {
               <td>${row.average}</td>
               <td>${row.leachable}</td>
             </tr>
-          `
-        })
+          `;
+        });
 
-        content += `</table>`
+        content += `</table>`;
       } else {
-        content += `<p>No analytical data available for this consignment.</p>`
+        content += `<p>No analytical data available for this consignment.</p>`;
       }
 
-      content += `</div>`
-    })
+      content += `</div>`;
+    });
 
     content += `
         </body>
       </html>
-    `
+    `;
 
-    return content
+    return content;
   }
 
   const addEmail = () => {
@@ -586,6 +589,21 @@ export function MaterialDescriptionFormComponent() {
   const removeEmail = (email: string) => {
     setDestinationEmails(destinationEmails.filter(e => e !== email))
   }
+
+  const onDrop = (acceptedFiles: File[]) => {
+    setUploadedFiles([...uploadedFiles, ...acceptedFiles]);
+  };
+
+  const removeFile = (fileName: string) => {
+    setUploadedFiles(uploadedFiles.filter(file => file.name !== fileName));
+  };
+
+  const { getRootProps, getInputProps } = useDropzone({ onDrop });
+
+  const handleExcalidrawToggle = (event) => {
+    event.preventDefault(); // Prevent form submission
+    setIsExcalidrawVisible(!isExcalidrawVisible);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -608,11 +626,11 @@ export function MaterialDescriptionFormComponent() {
         <div className="container mx-auto px-4">
           <h1 className="text-3xl font-bold mb-2">Surplus Soil Information Sheet</h1>
           <p className="mb-2">
-            This form provides a simple template for describing surplus soil to a receiving facility. 
-            Please note that individual facilities may have more or fewer requirements as part of their Waste Acceptance Criteria.
+            This form provides a simple template for desribing surplus soil consignments. Receiving facilities may require more, or different, information than the inputs on this form. 
           </p>
+
           <p className="mb-2">
-            This form is free to use and feedback is invited to help improve practices around the management of surplus soil.
+            Feedback is invited to help improve practices and build tools to support the management of surplus soil.
           </p>
           <p>
             <a 
@@ -620,11 +638,17 @@ export function MaterialDescriptionFormComponent() {
               className="text-green-200 hover:text-green-100 inline-flex items-center"
             >
               <Mail className="mr-2 h-4 w-4" />
-              Contact us for feedback
+              Feedback
             </a>
-          </p>
-          <p className="mt-4 text-sm">
-            This form is a work in progress and no guarantees are made about its function.
+            <a 
+              href="https://github.com" 
+              className="text-green-200 hover:text-green-100 inline-flex items-center ml-4"
+            >
+              <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.11.82-.26.82-.577v-2.165c-3.338.726-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.73.083-.73 1.205.085 1.84 1.237 1.84 1.237 1.07 1.835 2.807 1.305 3.492.998.108-.775.42-1.305.763-1.605-2.665-.305-5.466-1.332-5.466-5.93 0-1.31.467-2.38 1.235-3.22-.123-.305-.535-1.53.117-3.18 0 0 1.008-.322 3.3 1.23.957-.266 1.98-.4 3-.405 1.02.005 2.043.14 3 .405 2.29-1.552 3.297-1.23 3.297-1.23.653 1.65.24 2.875.118 3.18.77.84 1.235 1.91 1.235 3.22 0 4.61-2.803 5.62-5.475 5.92.43.37.823 1.1.823 2.22v3.293c0 .32.22.694.825.577C20.565 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/>
+              </svg>
+              Free and Open Source
+            </a>
           </p>
         </div>
       </header>
@@ -635,7 +659,7 @@ export function MaterialDescriptionFormComponent() {
           <ol className="list-decimal list-inside space-y-2">
             <li>Complete the relevant fields below to describe your consignment(s) of surplus soil.</li>
             <li>Compose an email in the Email Submission section and click preview to review.</li>
-            <li>Click Send Email to send the contents of your form as an attachment to the destination address.</li>
+            <li>Click Send Email to send the contents of your form to the destination address.</li>
           </ol>
         </div>
 
@@ -653,12 +677,29 @@ export function MaterialDescriptionFormComponent() {
               </div>
               <div>
                 <Label htmlFor="planOfWorks">Plan of proposed works (drawing/map/aerial etc.)</Label>
-                <div className="w-full h-[600px] border border-gray-300 rounded-md overflow-hidden">
+                <Button variant="outline" className="w-full justify-between mb-2" onClick={handleExcalidrawToggle}>
+                  {isExcalidrawVisible ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  Toggle Plan of Proposed Works
+                </Button>
+                <div className={`w-full h-[600px] border border-gray-300 rounded-md overflow-hidden ${isExcalidrawVisible ? '' : 'hidden'}`}>
                   {initialData ? (
                     <Excalidraw
                       onChange={onExcalidrawChange}
                       initialData={initialData}
                       excalidrawAPI={(api: any) => setExcalidrawAPI(api)}
+                      UIOptions={{
+                        canvasActions: {
+                          loadScene: false, // Disable "Open"
+                          saveToActiveFile: false, // Disable "Save to"
+                          export: false, // Disable "Export image"
+                        },
+                        welcomeScreen: {
+                          show: false, // Disable the welcome screen
+                        },
+                        menu: {
+                          show: false, // Disable the menu
+                        },
+                      }}
                     />
                   ) : (
                     <div>Loading tutorial...</div>
@@ -715,6 +756,37 @@ export function MaterialDescriptionFormComponent() {
               {Array.from({ length: consignments }, (_, i) => (
                 <ConsignmentDetails key={i} index={i} />
               ))}
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-3xl font-bold mb-4 text-green-800">Attachments</h2>
+            <div className="space-y-4">
+              <div {...getRootProps({ className: 'dropzone' })} className="dropzone border-2 border-dashed border-gray-300 p-4 rounded-md">
+                <input {...getInputProps()} />
+                <p>Drag 'n' drop or select other relevant documents or images (reports, lab data, site photos etc.)</p>
+              </div>
+              {uploadedFiles.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold">Uploaded Files</h3>
+                  <ul className="list-disc list-inside">
+                    {uploadedFiles.map((file, index) => (
+                      <li key={index} className="flex items-center space-x-2">
+                        <span>{file.name}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(file.name)}
+                          aria-label={`Remove ${file.name}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </section>
 
@@ -807,6 +879,19 @@ export function MaterialDescriptionFormComponent() {
                         <p>{customMessage}</p>
                         <h3 className="font-bold mt-4">Form Data:</h3>
                         <div dangerouslySetInnerHTML={{ __html: generateEmailContent() }} />
+                        {uploadedFiles.length > 0 && (
+                          <div className="mt-4">
+                            <h3 className=" text-green-600">Attachments</h3>
+                            <ul className="list-disc list-inside">
+                              {uploadedFiles.map((file, index) => (
+                                <li key={index} className="flex items-center space-x-2">
+                                  {file.type === "application/pdf" && <FileText className="h-4 w-4 text-gray-500" />}
+                                  <span>{file.name}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     </DialogContent>
                   </Dialog>
@@ -844,6 +929,17 @@ export function MaterialDescriptionFormComponent() {
           </p>
           <p>
             Waste Management Institute New Zealand Incorporated (WasteMINZ) September 2024
+          </p>
+          <p className="mt-4">
+            <a 
+              href="https://linkedin.com" 
+              className="text-green-200 hover:text-green-100 inline-flex items-center"
+            >
+              <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M19 0h-14c-2.76 0-5 2.24-5 5v14c0 2.76 2.24 5 5 5h14c2.76 0 5-2.24 5-5v-14c0-2.76-2.24-5-5-5zm-11 19h-3v-10h3v10zm-1.5-11.25c-.97 0-1.75-.78-1.75-1.75s.78-1.75 1.75-1.75 1.75.78 1.75 1.75-.78 1.75-1.75 1.75zm13.5 11.25h-3v-5.5c0-1.38-.02-3.16-1.93-3.16-1.93 0-2.23 1.51-2.23 3.06v5.6h-3v-10h2.88v1.36h.04c.4-.75 1.38-1.54 2.84-1.54 3.04 0 3.6 2 3.6 4.58v5.6z"/>
+              </svg>
+              Made with ❤️ by Tom Wilson
+            </a>
           </p>
         </div>
       </footer>
