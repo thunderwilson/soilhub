@@ -1,4 +1,4 @@
-export const generateEmailContent = (formData) => {
+export const generateEmailContent = (formData: { siteAddress: any; siteHistory: any; expectedConsignments: any; consignmentDetails: any[]; }) => {
   let content = `
     <html>
       <head>
@@ -68,7 +68,7 @@ export const generateEmailContent = (formData) => {
           </tr>
       `
 
-      consignment.analyticalRows.forEach(row => {
+      consignment.analyticalRows.forEach((row: { contaminant: any; maximum: any; minimum: any; average: any; leachable: any; }) => {
         content += `
           <tr>
             <td>${row.contaminant}</td>
@@ -96,7 +96,7 @@ export const generateEmailContent = (formData) => {
   return content
 };
 
-export const updateFormData = (formDataRef, field, value) => {
+export const updateFormData = (formDataRef: { current: any; }, field: any, value: any) => {
   formDataRef.current = {
     ...formDataRef.current,
     [field]: value,
