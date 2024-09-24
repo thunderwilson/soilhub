@@ -829,11 +829,11 @@ export function MaterialDescriptionFormComponent() {
           </section>
 
           <section>
-            <h2 className="text-3xl font-bold mb-4 text-green-800">Attachments</h2>
+            <h2 className="text-3xl font-bold mb-4 text-green-800">Attachments (<i>coming soon</i>)</h2>
             <div className="space-y-4">
-              <div {...getRootProps({ className: 'dropzone' })} className="dropzone border-2 border-dashed border-gray-300 p-4 rounded-md">
-                <input {...getInputProps()} />
-                <p>Drag 'n' drop or select other relevant documents or images (reports, lab data, site photos etc.)</p>
+              <div className="dropzone border-2 border-dashed border-gray-300 p-4 rounded-md bg-gray-200 cursor-not-allowed">
+                <input disabled />
+                <p className="text-gray-500">Upload relevant documents or images (reports, lab data, site photos etc.) (Disabled)</p>
               </div>
               {uploadedFiles.length > 0 && (
                 <div>
@@ -860,7 +860,7 @@ export function MaterialDescriptionFormComponent() {
           </section>
 
           <section>
-            <h2 className="text-3xl font-bold mb-4 text-green-800">Next Steps</h2>
+            <h2 className="text-3xl font-bold mb-4 text-green-800">Submit Form</h2>
             <div className="grid md:grid-cols-1 gap-6">
               <Card className="bg-gradient-to-r from-green-100 to-teal-100 border-green-300">
                 <CardHeader>
@@ -972,7 +972,7 @@ export function MaterialDescriptionFormComponent() {
                           <div dangerouslySetInnerHTML={{ __html: generateEmailContent() }} />
                           {uploadedFiles.length > 0 && (
                             <div className="mt-4">
-                              <h3 className=" text-green-600">Attachments</h3>
+                              {/* <h3 className=" text-green-600">Attachments</h3>
                               <ul className="list-disc list-inside">
                                 {uploadedFiles.map((file, index) => (
                                   <li key={index} className="flex items-center space-x-2">
@@ -980,7 +980,7 @@ export function MaterialDescriptionFormComponent() {
                                     <span>{file.name}</span>
                                   </li>
                                 ))}
-                              </ul>
+                              </ul> */}
                             </div>
                           )}
                         </div>

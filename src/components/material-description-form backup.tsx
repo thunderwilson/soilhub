@@ -1,5 +1,6 @@
 "use client"
 
+// Importing necessary libraries and components
 import React, { useState, useMemo, useRef, useEffect } from "react"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
@@ -11,16 +12,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "~/components/ui/card"
-import { ChevronDown, ChevronUp, Plus, X, Mail, Eye, MinusIcon, PlusIcon, FileText } from "lucide-react"
+import { ChevronDown, ChevronUp, Download,Plus, X, Mail, Eye, MinusIcon, PlusIcon, FileText } from "lucide-react"
 import { Excalidraw, exportToBlob, exportToSvg } from "@excalidraw/excalidraw"
 import { Badge } from "~/components/ui/badge"
 import { useDropzone } from 'react-dropzone'
 import axios from 'axios';
 
+// Default list of contaminants
 const defaultContaminants = [
   "Arsenic", "Cadmium", "Copper", "Chromium", "Mercury", "Nickel", "Zinc", "Asbestos P/A"
 ]
 
+// Predefined list of contaminants including the default ones
 const predefinedContaminants = [
   ...defaultContaminants,
   "Barium", "Beryllium", "Boron", "Manganese", "Selenium", "Friable Asbestos", "Non-friable Asbestos",
@@ -28,6 +31,7 @@ const predefinedContaminants = [
   "Naphthalene", "Phenols (total)", "BaP (eq)", "Total DDT", "Chlordane", "Dieldrin", "Endrin", "PCBs"
 ]
 
+// Type definition for an analytical row
 type AnalyticalRow = {
   id: string;
   contaminant: string;
@@ -37,6 +41,7 @@ type AnalyticalRow = {
   leachable: string;
 }
 
+// Type definition for consignment details
 type ConsignmentDetail = {
   materialDescription: string;
   expectedDeliveryDate: string;
@@ -53,28 +58,30 @@ type ConsignmentDetail = {
   analyticalRows: AnalyticalRow[];
 }
 
+// Main component for the material description form
 export function MaterialDescriptionFormComponent() {
-  const [consignments, setConsignments] = useState(1)
-  const [openSections, setOpenSections] = useState<number[]>([])
+  // State variables
+  const [consignments, setConsignments] = useState(1) // Number of consignments
+  const [openSections, setOpenSections] = useState<number[]>([]) // Sections that are open
   const formDataRef = useRef({
     siteAddress: "",
     siteHistory: "",
     expectedConsignments: 1,
     consignmentDetails: [] as ConsignmentDetail[],
-  })
-  const [destinationEmails, setDestinationEmails] = useState<string[]>([])
-  const [currentEmail, setCurrentEmail] = useState("")
-  const [customMessage, setCustomMessage] = useState("")
-  const [showEmailPreview, setShowEmailPreview] = useState(false)
-  const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null)
-  const [initialData, setInitialData] = useState(null)
-  const [excalidrawPNG, setExcalidrawPNG] = useState<string | null>(null)
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
-  const [isExcalidrawVisible, setIsExcalidrawVisible] = useState(false)
-  const [replyToEmail, setReplyToEmail] = useState("")
+  }) // Reference to form data
+  const [destinationEmails, setDestinationEmails] = useState<string[]>([]) // List of destination emails
+  const [currentEmail, setCurrentEmail] = useState("") // Current email being added
+  const [customMessage, setCustomMessage] = useState("") // Custom message for the email
+  const [showEmailPreview, setShowEmailPreview] = useState(false) // Flag to show email preview
+  const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null) // Excalidraw API instance
+  const [initialData, setInitialData] = useState(null) // Initial data for Excalidraw
+  const [excalidrawPNG, setExcalidrawPNG] = useState<string | null>(null) // PNG data for Excalidraw
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]) // List of uploaded files
+  const [isExcalidrawVisible, setIsExcalidrawVisible] = useState(false) // Flag to show/hide Excalidraw
+  const [replyToEmail, setReplyToEmail] = useState("") // Reply-to email address
 
+  // Effect to load the tutorial image for Excalidraw
   useEffect(() => {
-    // Load the tutorial image
     fetch("/tutorial.excalidraw")
       .then((response) => response.json())
       .then((data) => {
@@ -84,6 +91,7 @@ export function MaterialDescriptionFormComponent() {
       .catch((error) => console.error("Error loading tutorial data:", error));
   }, []);
 
+  // Function to capture Excalidraw drawing as PNG
   const captureExcalidrawPNG = async () => {
     if (excalidrawAPI) {
       try {
@@ -107,11 +115,12 @@ export function MaterialDescriptionFormComponent() {
     }
   };
 
+  // Function to handle changes in Excalidraw
   const onExcalidrawChange = () => {
     console.log("Excalidraw changed");
   };
 
-  // Add this effect to clean up the URL object
+  // Effect to clean up the URL object for Excalidraw PNG
   useEffect(() => {
     return () => {
       if (excalidrawPNG) {
@@ -120,12 +129,14 @@ export function MaterialDescriptionFormComponent() {
     };
   }, [excalidrawPNG]);
 
+  // Function to toggle the visibility of a section
   const toggleSection = (index: number) => {
     setOpenSections(prev =>
       prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
     )
   }
 
+  // Function to update form data
   const updateFormData = (field: string, value: any) => {
     formDataRef.current = {
       ...formDataRef.current,
@@ -133,12 +144,14 @@ export function MaterialDescriptionFormComponent() {
     }
   }
 
+  // Function to update the number of consignments
   const updateConsignments = (newValue: number) => {
     const validValue = Math.max(1, newValue)
     setConsignments(validValue)
     updateFormData("expectedConsignments", validValue)
   }
 
+  // Component to render consignment details
   const ConsignmentDetails = React.memo(({ index }: { index: number }) => {
     const consignmentData = formDataRef.current.consignmentDetails[index] || {}
     const [localState, setLocalState] = useState<ConsignmentDetail>({
@@ -156,6 +169,7 @@ export function MaterialDescriptionFormComponent() {
       ...consignmentData
     })
 
+    // Function to update local state
     const updateLocalState = (field: string, value: any) => {
       setLocalState(prev => {
         const updated = { ...prev, [field]: value }
@@ -164,6 +178,7 @@ export function MaterialDescriptionFormComponent() {
       })
     }
 
+    // State variables for analytical rows and contaminants
     const [analyticalRows, setAnalyticalRows] = useState<AnalyticalRow[]>(
       localState.analyticalRows.length > 0 ? localState.analyticalRows :
       defaultContaminants.map((contaminant, i) => ({
@@ -178,11 +193,13 @@ export function MaterialDescriptionFormComponent() {
     const [newContaminant, setNewContaminant] = useState("")
     const [filteredContaminants, setFilteredContaminants] = useState<string[]>([])
 
+    // Memoized list of available contaminants
     const availableContaminants = useMemo(() => {
       const existingContaminants = new Set(analyticalRows.map(row => row.contaminant.toLowerCase()))
       return predefinedContaminants.filter(contaminant => !existingContaminants.has(contaminant.toLowerCase()))
     }, [analyticalRows])
 
+    // Function to add a new analytical row
     const addAnalyticalRow = (contaminantToAdd: string) => {
       if (contaminantToAdd && !analyticalRows.some(row => row.contaminant.toLowerCase() === contaminantToAdd.toLowerCase())) {
         const newId = (analyticalRows.length + 1).toString()
@@ -194,12 +211,14 @@ export function MaterialDescriptionFormComponent() {
       }
     }
 
+    // Function to remove an analytical row
     const removeAnalyticalRow = (id: string) => {
       const updatedRows = analyticalRows.filter(row => row.id !== id)
       setAnalyticalRows(updatedRows)
       updateLocalState('analyticalRows', updatedRows)
     }
 
+    // Function to update an analytical row
     const updateAnalyticalRow = (id: string, field: keyof AnalyticalRow, value: string) => {
       const updatedRows = analyticalRows.map(row => 
         row.id === id ? { ...row, [field]: value } : row
@@ -208,6 +227,7 @@ export function MaterialDescriptionFormComponent() {
       updateLocalState('analyticalRows', updatedRows)
     }
 
+    // Function to handle contaminant search
     const handleContaminantSearch = (value: string) => {
       setNewContaminant(value)
       if (value.trim() === "") {
@@ -840,14 +860,21 @@ export function MaterialDescriptionFormComponent() {
           </section>
 
           <section>
-            <h2 className="text-3xl font-bold mb-4 text-green-800">Email Submission</h2>
-            <div className="grid md:grid-cols-2 gap-6">
+            <h2 className="text-3xl font-bold mb-4 text-green-800">Next Steps</h2>
+            <div className="grid md:grid-cols-1 gap-6">
               <Card className="bg-gradient-to-r from-green-100 to-teal-100 border-green-300">
                 <CardHeader>
-                  <CardTitle className="text-green-800">Email Details</CardTitle>
+                  <CardTitle className="text-green-800">Email Your Completed Form as a PDF</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-
+                
+                <p className="text-sm text-green-800 mb-4">
+                Enter the recipient's email address below. The PDF will be sent from <i>forms@soilhub.nz</i>.
+                To receive replies directly, add your email address in the 'Reply To' field.
+                </p>
+                <p className="text-sm text-green-800 mb-4">
+                Before sending, use the "Preview Email" button to review the content.
+                </p>
                   <div>
                     <Label htmlFor="destinationEmail">Destination Email Addresses</Label>
                     <div className="flex space-x-2">
@@ -893,11 +920,11 @@ export function MaterialDescriptionFormComponent() {
                     )}
                   </div>
                   <div>
-                    <Label htmlFor="replyToEmail">'From/Reply To' Email Address</Label>
+                    <Label htmlFor="replyToEmail">'Reply To' Email Address</Label>
                     <Input 
                       id="replyToEmail" 
                       type="email" 
-                      placeholder="Form will appear to come from this address. Replies will be sent here."
+                      placeholder="Replies will be sent here."
                       className="bg-white"
                       value={replyToEmail}
                       onChange={(e) => setReplyToEmail(e.target.value)}
@@ -915,67 +942,73 @@ export function MaterialDescriptionFormComponent() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        className="w-full bg-green-200 hover:bg-green-300 text-green-800 border-green-400"
-                        onClick={async () => {
-                          await captureExcalidrawPNG();
-                          setShowEmailPreview(prev => !prev);
-                        }}
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        Preview Email
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-[800px] max-h-[80vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle className="text-xl font-bold text-green-800">Email Preview</DialogTitle>
-                      </DialogHeader>
-                      <div className="mt-4 p-4">
-                        <h3 className="font-bold">From: {replyToEmail}</h3>
-                        <h3 className="font-bold">To: {destinationEmails.join(", ")}</h3>
-                        <h3 className="font-bold mt-2">Custom Message:</h3>
-                        <p>{customMessage}</p>
-                        {/* <h3 className="font-bold mt-4">Form Data:</h3> */}
-                        <div dangerouslySetInnerHTML={{ __html: generateEmailContent() }} />
-                        {uploadedFiles.length > 0 && (
-                          <div className="mt-4">
-                            <h3 className=" text-green-600">Attachments</h3>
-                            <ul className="list-disc list-inside">
-                              {uploadedFiles.map((file, index) => (
-                                <li key={index} className="flex items-center space-x-2">
-                                  {file.type === "application/pdf" && <FileText className="h-4 w-4 text-gray-500" />}
-                                  <span>{file.name}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <div className="flex flex-col space-y-4 w-full">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="w-full bg-green-200 hover:bg-green-300 text-green-800 border-green-400"
+                          onClick={async () => {
+                            await captureExcalidrawPNG();
+                            setShowEmailPreview(prev => !prev);
+                          }}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          Preview Email
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-[800px] max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle className="text-xl font-bold text-green-800">Email Preview</DialogTitle>
+                        </DialogHeader>
+                        <div className="mt-4 p-4">
+                          <h3 className="font-bold">To: {destinationEmails.join(", ")}</h3>
+                          <h3 className="font-bold">Reply To: {replyToEmail}</h3>
+
+                          <h3 className="font-bold mt-2">Custom Message:</h3>
+                          <p>{customMessage}</p>
+                          {/* <h3 className="font-bold mt-4">Form Data:</h3> */}
+                          <div dangerouslySetInnerHTML={{ __html: generateEmailContent() }} />
+                          {uploadedFiles.length > 0 && (
+                            <div className="mt-4">
+                              <h3 className=" text-green-600">Attachments</h3>
+                              <ul className="list-disc list-inside">
+                                {uploadedFiles.map((file, index) => (
+                                  <li key={index} className="flex items-center space-x-2">
+                                    {file.type === "application/pdf" && <FileText className="h-4 w-4 text-gray-500" />}
+                                    <span>{file.name}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white">
+                      <Mail className="mr-2 h-4 w-4" />
+                      Email Form
+                    </Button>
+                  </div>
                 </CardFooter>
               </Card>
-              <Card className="bg-gradient-to-r from-teal-100 to-blue-100 border-teal-300">
+              {/* <Card className="bg-gradient-to-r from-teal-100 to-blue-100 border-teal-300">
                 <CardHeader>
-                  <CardTitle className="text-green-800">Submit Form</CardTitle>
+                  <CardTitle className="text-green-800">Download Form</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-green-800 mb-4">
-                    Please review your form entries and email details before submitting. 
-                    Use the "Preview Email" button to check the content of the email that will be sent.
+                    Click the button below if you would prefer to download a PDF version of the completed form. 
                   </p>
                 </CardContent>
                 <CardFooter>
                   <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white">
-                    <Mail className="mr-2 h-4 w-4" />
-                    Submit Form
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Form
                   </Button>
                 </CardFooter>
-              </Card>
+              </Card> */}
             </div>
           </section>
         </form>
