@@ -17,6 +17,8 @@ import { Excalidraw, exportToBlob, exportToSvg } from "@excalidraw/excalidraw"
 import { Badge } from "~/components/ui/badge"
 import { useDropzone } from 'react-dropzone'
 import axios from 'axios';
+import { AnalyticalSummaryTable } from "~/components/AnalyticalSummaryTable"
+import { SamplingDetails } from "~/components/SamplingDetails"
 
 // Default list of contaminants
 const defaultContaminants = [
@@ -307,187 +309,20 @@ export function MaterialDescriptionFormComponent() {
               </div>
             </TabsContent>
             <TabsContent value="sampling" className="space-y-6">
-              <div>
-                <Label htmlFor={`samplesTaken-${index}`}>Number of samples taken</Label>
-                <Input 
-                  type="number" 
-                  id={`samplesTaken-${index}`} 
-                  value={localState.samplesTaken}
-                  onChange={(e) => updateLocalState("samplesTaken", e.target.value)}
-                />
-              </div>
-              <div>
-                <Label className="text-base font-medium mb-2 block">How were samples taken</Label>
-                <RadioGroup 
-                  className="space-y-2" 
-                  value={localState.sampleMethod}
-                  onValueChange={(value) => updateLocalState("sampleMethod", value)}
-                >
-                  {['inSitu', 'stockpiles', 'other'].map((method) => (
-                    <div key={method} className="flex items-center space-x-2">
-                      <RadioGroupItem 
-                        value={method} 
-                        id={`${method}-${index}`}
-                        className="border-2 border-green-600 text-green-600 focus:border-green-700 focus:ring-green-700"
-                      />
-                      <Label 
-                        htmlFor={`${method}-${index}`} 
-                        className="text-sm font-normal cursor-pointer"
-                      >
-                        {method === 'inSitu' ? 'In-situ' : 
-                         method === 'stockpiles' ? 'Stockpiles' : 'Other'}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-                {localState.sampleMethod === "other" && (
-                  <Input 
-                    className="mt-2" 
-                    placeholder="Please specify other sample method" 
-                    id={`otherSampleMethodText-${index}`}
-                    value={localState.otherSampleMethod || ""}
-                    onChange={(e) => updateLocalState("otherSampleMethod", e.target.value)}
-                  />
-                )}
-              </div>
-              <div>
-                <Label htmlFor={`sampleMethodAdditionalInfo-${index}`}>Additional information about sampling method</Label>
-                <Textarea 
-                  id={`sampleMethodAdditionalInfo-${index}`} 
-                  value={localState.sampleMethodAdditionalInfo}
-                  onChange={(e) => updateLocalState("sampleMethodAdditionalInfo", e.target.value)}
-                  placeholder="Provide any additional context or details about how samples were taken"
-                />
-              </div>
-              <div>
-                <Label className="text-base font-medium mb-2 block">Soil categorised by</Label>
-                <RadioGroup 
-                  className="space-y-2" 
-                  value={localState.soilCategorization}
-                  onValueChange={(value) => updateLocalState("soilCategorization", value)}
-                >
-                  {['highestConcentration', '95UCL', 'other'].map((method) => (
-                    <div key={method} className="flex items-center space-x-2">
-                      <RadioGroupItem 
-                        value={method} 
-                        id={`${method}-${index}`}
-                        className="border-2 border-green-600 text-green-600 focus:border-green-700 focus:ring-green-700"
-                      />
-                      <Label 
-                        htmlFor={`${method}-${index}`} 
-                        className="text-sm font-normal cursor-pointer"
-                      >
-                        {method === 'highestConcentration' ? 'Highest concentration' : 
-                         method === '95UCL' ? '95%UCL average' : 'Other'}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-                {localState.soilCategorization === "other" && (
-                  <Input 
-                    className="mt-2" 
-                    placeholder="Please specify other soil categorization method" 
-                    id={`otherSoilCategorizationText-${index}`}
-                    value={localState.otherSoilCategorization || ""}
-                    onChange={(e) => updateLocalState("otherSoilCategorization", e.target.value)}
-                  />
-                )}
-              </div>
-              <div>
-                <Label htmlFor={`soilCategorizationAdditionalInfo-${index}`}>Additional information about soil categorization</Label>
-                <Textarea 
-                  id={`soilCategorizationAdditionalInfo-${index}`} 
-                  value={localState.soilCategorizationAdditionalInfo}
-                  onChange={(e) => updateLocalState("soilCategorizationAdditionalInfo", e.target.value)}
-                  placeholder="Provide any additional context or details about soil categorization"
-                />
-              </div>
+              <SamplingDetails
+                index={index}
+                localState={localState}
+                updateLocalState={updateLocalState}
+              />
             </TabsContent>
             <TabsContent value="analytical">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Contaminant</TableHead>
-                    <TableHead>Maximum reported Contaminant concentration (total) mg/kg dry weight</TableHead>
-                    <TableHead>Minimum reported Contaminant concentration (total) mg/kg dry weight</TableHead>
-                    <TableHead>Average reported Contaminant concentration (total) mg/kg dry weight Or 95%UCL average</TableHead>
-                    <TableHead>If available: Maximum Leachable Concentration (mg/L)</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {analyticalRows.map((row) => (
-                    <TableRow key={row.id}>
-                      <TableCell>{row.contaminant}</TableCell>
-                      <TableCell>
-                        <Input
-                          type="text"
-                          value={row.maximum}
-                          onChange={(e) => updateAnalyticalRow(row.id, "maximum", e.target.value)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="text"
-                          value={row.minimum}
-                          onChange={(e) => updateAnalyticalRow(row.id, "minimum", e.target.value)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="text"
-                          value={row.average}
-                          onChange={(e) => updateAnalyticalRow(row.id, "average", e.target.value)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="text"
-                          value={row.leachable}
-                          onChange={(e) => updateAnalyticalRow(row.id, "leachable", e.target.value)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeAnalyticalRow(row.id)}
-                          aria-label={`Remove ${row.contaminant}`}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <div className="flex items-center space-x-2 mt-4">
-                <div className="relative flex-grow">
-                  <Input
-                    placeholder="Search or add new contaminant"
-                    value={newContaminant}
-                    onChange={(e) => handleContaminantSearch(e.target.value)}
-                  />
-                  {filteredContaminants.length > 0 && (
-                    <ul className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
-                      {filteredContaminants.map((contaminant) => (
-                        <li
-                          key={contaminant}
-                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
-                          onClick={() => {
-                            addAnalyticalRow(contaminant)
-                          }}
-                        >
-                          {contaminant}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-                <Button onClick={() => addAnalyticalRow(newContaminant)} disabled={!newContaminant || analyticalRows.some(row => row.contaminant.toLowerCase() === newContaminant.toLowerCase())}>
-                  <Plus className="h-4 w-4 mr-2" /> Add
-                </Button>
-              </div>
+              <AnalyticalSummaryTable
+                analyticalRows={analyticalRows}
+                updateAnalyticalRow={updateAnalyticalRow}
+                removeAnalyticalRow={removeAnalyticalRow}
+                addAnalyticalRow={addAnalyticalRow}
+                availableContaminants={availableContaminants}
+              />
             </TabsContent>
           </Tabs>
         </CollapsibleContent>
