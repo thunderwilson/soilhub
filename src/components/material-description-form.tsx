@@ -19,6 +19,11 @@ import { useDropzone } from 'react-dropzone'
 import axios from 'axios';
 import { AnalyticalSummaryTable } from "~/components/AnalyticalSummaryTable"
 import { SamplingDetails } from "~/components/SamplingDetails"
+import { Header } from '~/components/Header'
+import { Footer } from '~/components/Footer'
+import { Instructions } from '~/components/Instructions'
+import { MaterialDescription } from '~/components/MaterialDescription'
+import { ConsignmentDetails } from '~/components/ConsignmentDetails'
 
 // Default list of contaminants
 const defaultContaminants = [
@@ -152,183 +157,6 @@ export function MaterialDescriptionFormComponent() {
     setConsignments(validValue)
     updateFormData("expectedConsignments", validValue)
   }
-
-  // Component to render consignment details
-  const ConsignmentDetails = React.memo(({ index }: { index: number }) => {
-    const consignmentData = formDataRef.current.consignmentDetails[index] || {}
-    const [localState, setLocalState] = useState<ConsignmentDetail>({
-      materialDescription: "",
-      expectedDeliveryDate: "",
-      expectedDuration: "",
-      expectedFrequency: "",
-      expectedVolume: "",
-      samplesTaken: "",
-      sampleMethod: "",
-      sampleMethodAdditionalInfo: "",
-      soilCategorization: "",
-      soilCategorizationAdditionalInfo: "",
-      analyticalRows: [],
-      ...consignmentData
-    })
-
-    // Function to update local state
-    const updateLocalState = (field: string, value: any) => {
-      setLocalState(prev => {
-        const updated = { ...prev, [field]: value }
-        formDataRef.current.consignmentDetails[index] = updated
-        return updated
-      })
-    }
-
-    // State variables for analytical rows and contaminants
-    const [analyticalRows, setAnalyticalRows] = useState<AnalyticalRow[]>(
-      localState.analyticalRows.length > 0 ? localState.analyticalRows :
-      defaultContaminants.map((contaminant, i) => ({
-        id: (i + 1).toString(),
-        contaminant,
-        maximum: "",
-        minimum: "",
-        average: "",
-        leachable: ""
-      }))
-    )
-    const [newContaminant, setNewContaminant] = useState("")
-    const [filteredContaminants, setFilteredContaminants] = useState<string[]>([])
-
-    // Memoized list of available contaminants
-    const availableContaminants = useMemo(() => {
-      const existingContaminants = new Set(analyticalRows.map(row => row.contaminant.toLowerCase()))
-      return predefinedContaminants.filter(contaminant => !existingContaminants.has(contaminant.toLowerCase()))
-    }, [analyticalRows])
-
-    // Function to add a new analytical row
-    const addAnalyticalRow = (contaminantToAdd: string) => {
-      if (contaminantToAdd && !analyticalRows.some(row => row.contaminant.toLowerCase() === contaminantToAdd.toLowerCase())) {
-        const newId = (analyticalRows.length + 1).toString()
-        const updatedRows = [...analyticalRows, { id: newId, contaminant: contaminantToAdd, maximum: "", minimum: "", average: "", leachable: "" }]
-        setAnalyticalRows(updatedRows)
-        updateLocalState('analyticalRows', updatedRows)
-        setNewContaminant("")
-        setFilteredContaminants([])
-      }
-    }
-
-    // Function to remove an analytical row
-    const removeAnalyticalRow = (id: string) => {
-      const updatedRows = analyticalRows.filter(row => row.id !== id)
-      setAnalyticalRows(updatedRows)
-      updateLocalState('analyticalRows', updatedRows)
-    }
-
-    // Function to update an analytical row
-    const updateAnalyticalRow = (id: string, field: keyof AnalyticalRow, value: string) => {
-      const updatedRows = analyticalRows.map(row => 
-        row.id === id ? { ...row, [field]: value } : row
-      )
-      setAnalyticalRows(updatedRows)
-      updateLocalState('analyticalRows', updatedRows)
-    }
-
-    // Function to handle contaminant search
-    const handleContaminantSearch = (value: string) => {
-      setNewContaminant(value)
-      if (value.trim() === "") {
-        setFilteredContaminants([])
-      } else {
-        setFilteredContaminants(
-          availableContaminants.filter(contaminant => 
-            contaminant.toLowerCase().includes(value.toLowerCase())
-          )
-        )
-      }
-    }
-
-    return (
-      <Collapsible
-        open={openSections.includes(index)}
-        onOpenChange={() => toggleSection(index)}
-      >
-        <CollapsibleTrigger asChild>
-          <Button variant="outline" className="w-full justify-between mb-2">
-            Consignment {index + 1} Details
-            {openSections.includes(index) ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-4 mb-4">
-          <Tabs defaultValue="description" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="description">Description</TabsTrigger>
-              <TabsTrigger value="sampling">Sampling Details</TabsTrigger>
-              <TabsTrigger value="analytical">Analytical Summary</TabsTrigger>
-            </TabsList>
-            <TabsContent value="description" className="space-y-4">
-              <div>
-                <Label htmlFor={`materialDescription-${index}`}>Material Description</Label>
-                <Textarea 
-                  id={`materialDescription-${index}`} 
-                  value={localState.materialDescription}
-                  onChange={(e) => updateLocalState("materialDescription", e.target.value)}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor={`expectedDeliveryDate-${index}`}>Expected date of delivery commencement</Label>
-                  <Input 
-                    id={`expectedDeliveryDate-${index}`} 
-                    type="date" 
-                    value={localState.expectedDeliveryDate}
-                    onChange={(e) => updateLocalState("expectedDeliveryDate", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor={`expectedDuration-${index}`}>Expected duration of delivery</Label>
-                  <Input 
-                    id={`expectedDuration-${index}`} 
-                    value={localState.expectedDuration}
-                    onChange={(e) => updateLocalState("expectedDuration", e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor={`expectedFrequency-${index}`}>Expected frequency of deliveries</Label>
-                  <Input 
-                    id={`expectedFrequency-${index}`} 
-                    value={localState.expectedFrequency}
-                    onChange={(e) => updateLocalState("expectedFrequency", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor={`expectedVolume-${index}`}>Expected solid volume of consignment</Label>
-                  <Input 
-                    id={`expectedVolume-${index}`} 
-                    value={localState.expectedVolume}
-                    onChange={(e) => updateLocalState("expectedVolume", e.target.value)}
-                  />
-                </div>
-              </div>
-            </TabsContent>
-            <TabsContent value="sampling" className="space-y-6">
-              <SamplingDetails
-                index={index}
-                localState={localState}
-                updateLocalState={updateLocalState}
-              />
-            </TabsContent>
-            <TabsContent value="analytical">
-              <AnalyticalSummaryTable
-                analyticalRows={analyticalRows}
-                updateAnalyticalRow={updateAnalyticalRow}
-                removeAnalyticalRow={removeAnalyticalRow}
-                addAnalyticalRow={addAnalyticalRow}
-                availableContaminants={availableContaminants}
-              />
-            </TabsContent>
-          </Tabs>
-        </CollapsibleContent>
-      </Collapsible>
-    )
-  })
 
   const generateEmailContent = () => {
     const formData = formDataRef.current;
@@ -531,134 +359,37 @@ export function MaterialDescriptionFormComponent() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <header className="bg-green-800 text-white py-6">
-        <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold mb-2">Surplus Soil Information Sheet</h1>
-          <p className="mb-2">
-            This form provides a simple template for desribing surplus soil consignments. Receiving facilities may require more, or different, information than the inputs on this form. 
-          </p>
-
-          <p className="mb-2">
-            Feedback is invited to help improve practices and build tools to support the management of surplus soil.
-          </p>
-          <p>
-            <a 
-              href="mailto:tom@sephira.nz" 
-              className="text-green-200 hover:text-green-100 inline-flex items-center"
-            >
-              <Mail className="mr-2 h-4 w-4" />
-              Feedback
-            </a>
-            <a 
-              href="https://github.com" 
-              className="text-green-200 hover:text-green-100 inline-flex items-center ml-4"
-            >
-              <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.11.82-.26.82-.577v-2.165c-3.338.726-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.73.083-.73 1.205.085 1.84 1.237 1.84 1.237 1.07 1.835 2.807 1.305 3.492.998.108-.775.42-1.305.763-1.605-2.665-.305-5.466-1.332-5.466-5.93 0-1.31.467-2.38 1.235-3.22-.123-.305-.535-1.53.117-3.18 0 0 1.008-.322 3.3 1.23.957-.266 1.98-.4 3-.405 1.02.005 2.043.14 3 .405 2.29-1.552 3.297-1.23 3.297-1.23.653 1.65.24 2.875.118 3.18.77.84 1.235 1.91 1.235 3.22 0 4.61-2.803 5.62-5.475 5.92.43.37.823 1.1.823 2.22v3.293c0 .32.22.694.825.577C20.565 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/>
-              </svg>
-              Free and Open Source
-            </a>
-          </p>
-        </div>
-      </header>
+      <Header />
 
       <div className="container mx-auto p-4 space-y-8">
-        <div className="bg-white bg-opacity-90 rounded-lg shadow-xl p-6 space-y-4">
-          <h2 className="text-2xl font-bold text-green-800">Instructions</h2>
-          <ol className="list-decimal list-inside space-y-2">
-            <li>Complete the relevant fields below to describe your consignment(s) of surplus soil.</li>
-            <li>Compose an email in the Email Submission section and click preview to review.</li>
-            <li>Click Send Email to send the contents of your form to the destination address.</li>
-          </ol>
-        </div>
+        <Instructions />
 
         <form className="space-y-8 bg-white bg-opacity-80 backdrop-blur-md rounded-lg shadow-xl p-6" onSubmit={handleSubmit}>
-          <section>
-            <h2 className="text-3xl font-bold mb-4 text-green-800">Material Description</h2>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="siteAddress">Site Address</Label>
-                <Input 
-                  id="siteAddress" 
-                  defaultValue={formDataRef.current.siteAddress}
-                  onBlur={(e) => updateFormData("siteAddress", e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="planOfWorks">Plan of proposed works (drawing/map/aerial etc.)</Label>
-                <Button variant="outline" className="w-full justify-between mb-2" onClick={handleExcalidrawToggle}>
-                  {isExcalidrawVisible ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  Toggle Plan of Proposed Works
-                </Button>
-                <div className={`w-full h-[600px] border border-gray-300 rounded-md overflow-hidden ${isExcalidrawVisible ? '' : 'hidden'}`}>
-                  {initialData ? (
-                    <Excalidraw
-                      onChange={onExcalidrawChange}
-                      initialData={initialData}
-                      excalidrawAPI={(api: any) => setExcalidrawAPI(api)}
-                      UIOptions={{
-                        canvasActions: {
-                          loadScene: false, // Disable "Open"
-                          saveToActiveFile: false, // Disable "Save to"
-                          export: false, // Disable "Export image"
-                        },
-
-                      }}
-                    />
-                  ) : (
-                    <div>Loading tutorial...</div>
-                  )}
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="siteHistory">History of Site Activity</Label>
-                <Textarea 
-                  id="siteHistory" 
-                  defaultValue={formDataRef.current.siteHistory}
-                  onBlur={(e) => updateFormData("siteHistory", e.target.value)}
-                  className="h-32"
-                />
-              </div>
-              <div className="w-full max-w-sm space-y-2">
-                <Label htmlFor="expectedConsignments">Expected Consignments</Label>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => updateConsignments(consignments - 1)}
-                    aria-label="Decrease consignments"
-                  >
-                    <MinusIcon className="h-4 w-4" />
-                  </Button>
-                  <Input 
-                    id="expectedConsignments" 
-                    type="text" 
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={consignments}
-                    onChange={(e) => updateConsignments(parseInt(e.target.value) || 1)}
-                    className="w-20 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => updateConsignments(consignments + 1)}
-                    aria-label="Increase consignments"
-                  >
-                    <PlusIcon className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </section>
+          <MaterialDescription
+            formDataRef={formDataRef}
+            updateFormData={updateFormData}
+            consignments={consignments}
+            updateConsignments={updateConsignments}
+            isExcalidrawVisible={isExcalidrawVisible}
+            setIsExcalidrawVisible={setIsExcalidrawVisible}
+            excalidrawAPI={excalidrawAPI}
+            setExcalidrawAPI={setExcalidrawAPI}
+            initialData={initialData}
+            onExcalidrawChange={onExcalidrawChange}
+          />
 
           <section>
             <h2 className="text-3xl font-bold mb-4 text-green-800">Consignment Details</h2>
             <div className="space-y-4">
               {Array.from({ length: consignments }, (_, i) => (
-                <ConsignmentDetails key={i} index={i} />
+                <ConsignmentDetails 
+                  key={i} 
+                  index={i} 
+                  formDataRef={formDataRef}
+                  openSections={openSections}
+                  toggleSection={toggleSection}
+                  availableContaminants={predefinedContaminants}
+                />
               ))}
             </div>
           </section>
@@ -849,30 +580,7 @@ export function MaterialDescriptionFormComponent() {
         </form>
       </div>
 
-      <footer className="bg-green-800 text-white py-6 mt-8">
-        <div className="container mx-auto px-4">
-          <p>
-            This form is based on the 'Surplus Soil Information Sheet' featured in the document:
-          </p>
-          <p className="font-semibold mt-2">
-            Technical Guidelines: Characterising Surplus Soil for Disposal
-          </p>
-          <p>
-            Waste Management Institute New Zealand Incorporated (WasteMINZ) September 2024
-          </p>
-          <p className="mt-4">
-            <a 
-              href="https://linkedin.com" 
-              className="text-green-200 hover:text-green-100 inline-flex items-center"
-            >
-              <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M19 0h-14c-2.76 0-5 2.24-5 5v14c0 2.76 2.24 5 5 5h14c2.76 0 5-2.24 5-5v-14c0-2.76-2.24-5-5-5zm-11 19h-3v-10h3v10zm-1.5-11.25c-.97 0-1.75-.78-1.75-1.75s.78-1.75 1.75-1.75 1.75.78 1.75 1.75-.78 1.75-1.75 1.75zm13.5 11.25h-3v-5.5c0-1.38-.02-3.16-1.93-3.16-1.93 0-2.23 1.51-2.23 3.06v5.6h-3v-10h2.88v1.36h.04c.4-.75 1.38-1.54 2.84-1.54 3.04 0 3.6 2 3.6 4.58v5.6z"/>
-              </svg>
-              Made with ❤️ by Tom Wilson
-            </a>
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }
