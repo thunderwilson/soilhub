@@ -24,6 +24,7 @@ import { Footer } from '~/components/Footer'
 import { Instructions } from '~/components/Instructions'
 import { MaterialDescription } from '~/components/MaterialDescription'
 import { ConsignmentDetails } from '~/components/ConsignmentDetails'
+import { EmailSubmission } from '~/components/EmailSubmission'
 
 // Default list of contaminants
 const defaultContaminants = [
@@ -92,7 +93,7 @@ export function MaterialDescriptionFormComponent() {
     fetch("/tutorial.excalidraw")
       .then((response) => response.json())
       .then((data) => {
-        console.log("Loaded tutorial data:", data); // Add this log
+        console.log("Loaded tutorial data:", data);
         setInitialData(data);
       })
       .catch((error) => console.error("Error loading tutorial data:", error));
@@ -290,73 +291,6 @@ export function MaterialDescriptionFormComponent() {
     setIsExcalidrawVisible(!isExcalidrawVisible);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Generate the email content
-    const emailContent = generateEmailContent();
-
-    // Prepare the data to be sent
-    const formData = {
-      emailDetails: {
-        to: destinationEmails,
-        replyTo: replyToEmail,
-        customMessage: customMessage,
-      },
-      siteInformation: {
-        siteAddress: formDataRef.current.siteAddress,
-        siteHistory: formDataRef.current.siteHistory,
-        expectedConsignments: formDataRef.current.expectedConsignments,
-      },
-      consignmentDetails: formDataRef.current.consignmentDetails.map((consignment, index) => ({
-        consignmentNumber: index + 1,
-        materialDescription: consignment.materialDescription,
-        expectedDeliveryDate: consignment.expectedDeliveryDate,
-        expectedDuration: consignment.expectedDuration,
-        expectedFrequency: consignment.expectedFrequency,
-        expectedVolume: consignment.expectedVolume,
-        samplingDetails: {
-          samplesTaken: consignment.samplesTaken,
-          sampleMethod: consignment.sampleMethod,
-          otherSampleMethod: consignment.otherSampleMethod,
-          sampleMethodAdditionalInfo: consignment.sampleMethodAdditionalInfo,
-          soilCategorization: consignment.soilCategorization,
-          otherSoilCategorization: consignment.otherSoilCategorization,
-          soilCategorizationAdditionalInfo: consignment.soilCategorizationAdditionalInfo,
-        },
-        analyticalSummary: consignment.analyticalRows,
-      })),
-      attachments: uploadedFiles.map(file => ({
-        name: file.name,
-        type: file.type,
-        size: file.size,
-      })),
-      htmlContent: emailContent,
-    };
-
-    try {
-      // Send the data to the webhook
-      const response = await axios.post(
-        'https://hook.us1.make.com/swsnm14i1t7qowyc3g4dmzo0ul2r0wrg',
-        formData,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (response.status === 200) {
-        alert("Form submitted successfully!");
-      } else {
-        throw new Error('Submission failed');
-      }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      alert("An error occurred while submitting the form. Please try again.");
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-100">
       <Header />
@@ -364,7 +298,7 @@ export function MaterialDescriptionFormComponent() {
       <div className="container mx-auto p-4 space-y-8">
         <Instructions />
 
-        <form className="space-y-8 bg-white bg-opacity-80 backdrop-blur-md rounded-lg shadow-xl p-6" onSubmit={handleSubmit}>
+        <form className="space-y-8 bg-white bg-opacity-80 backdrop-blur-md rounded-lg shadow-xl p-6">
           <MaterialDescription
             formDataRef={formDataRef}
             updateFormData={updateFormData}
@@ -395,187 +329,13 @@ export function MaterialDescriptionFormComponent() {
           </section>
 
           <section>
-            <h2 className="text-3xl font-bold mb-4 text-green-800">Attachments (<i>coming soon</i>)</h2>
-            <div className="space-y-4">
-              <div className="dropzone border-2 border-dashed border-gray-300 p-4 rounded-md bg-gray-200 cursor-not-allowed">
-                <input disabled />
-                <p className="text-gray-500">Upload relevant documents or images (reports, lab data, site photos etc.) (Disabled)</p>
-              </div>
-              {uploadedFiles.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold">Uploaded Files</h3>
-                  <ul className="list-disc list-inside">
-                    {uploadedFiles.map((file, index) => (
-                      <li key={index} className="flex items-center space-x-2">
-                        <span>{file.name}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeFile(file.name)}
-                          aria-label={`Remove ${file.name}`}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </section>
-
-          <section>
             <h2 className="text-3xl font-bold mb-4 text-green-800">Submit Form</h2>
-            <div className="grid md:grid-cols-1 gap-6">
-              <Card className="bg-gradient-to-r from-green-100 to-teal-100 border-green-300">
-                <CardHeader>
-                  <CardTitle className="text-green-800">Email Your Completed Form as a PDF</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                
-                <p className="text-sm text-green-800 mb-4">
-                Enter the recipient's email address below. The PDF will be sent from <i>forms@soilhub.nz</i>.
-                To receive replies directly, add your email address in the 'Reply To' field.
-                </p>
-                <p className="text-sm text-green-800 mb-4">
-                Before sending, use the "Preview Email" button to review the content.
-                </p>
-                  <div>
-                    <Label htmlFor="destinationEmail">Destination Email Addresses</Label>
-                    <div className="flex space-x-2">
-                      <Input 
-                        id="destinationEmail" 
-                        type="email" 
-                        value={currentEmail}
-                        onChange={(e) => setCurrentEmail(e.target.value)}
-                        placeholder="Enter an email address"
-                        className="bg-white flex-grow"
-                      />
-                      <Button 
-                        type="button" 
-                        onClick={addEmail}
-                        disabled={!currentEmail || destinationEmails.includes(currentEmail)}
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        Add
-                      </Button>
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {destinationEmails.map((email, index) => (
-                        <Badge 
-                          key={index} 
-                          variant="outline" 
-                          className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-                        >
-                          {email}
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeEmail(email)}
-                            className="ml-1 h-4 w-4 p-0 text-green-700 hover:text-green-900 hover:bg-green-200 rounded-full"
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </Badge>
-                      ))}
-                    </div>
-                    {destinationEmails.length === 0 && (
-                      <p className="text-sm text-gray-500 mt-1">No email addresses added yet.</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="replyToEmail">'Reply To' Email Address</Label>
-                    <Input 
-                      id="replyToEmail" 
-                      type="email" 
-                      placeholder="Replies will be sent here."
-                      className="bg-white"
-                      value={replyToEmail}
-                      onChange={(e) => setReplyToEmail(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="customMessage">Custom Message</Label>
-                    <Textarea 
-                      id="customMessage" 
-                      value={customMessage}
-                      onChange={(e) => setCustomMessage(e.target.value)}
-                      rows={4}
-                      className="bg-white"
-                    />
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <div className="flex flex-col space-y-4 w-full">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          className="w-full bg-green-200 hover:bg-green-300 text-green-800 border-green-400"
-                          onClick={async () => {
-                            await captureExcalidrawPNG();
-                            setShowEmailPreview(prev => !prev);
-                          }}
-                        >
-                          <Eye className="mr-2 h-4 w-4" />
-                          Preview Email
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-[800px] max-h-[80vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle className="text-xl font-bold text-green-800">Email Preview</DialogTitle>
-                        </DialogHeader>
-                        <div className="mt-4 p-4">
-                          <h3 className="font-bold">To: {destinationEmails.join(", ")}</h3>
-                          <h3 className="font-bold">Reply To: {replyToEmail}</h3>
-
-                          <h3 className="font-bold mt-2">Custom Message:</h3>
-                          <p>{customMessage}</p>
-                          {/* <h3 className="font-bold mt-4">Form Data:</h3> */}
-                          <div dangerouslySetInnerHTML={{ __html: generateEmailContent() }} />
-                          {uploadedFiles.length > 0 && (
-                            <div className="mt-4">
-                              {/* <h3 className=" text-green-600">Attachments</h3>
-                              <ul className="list-disc list-inside">
-                                {uploadedFiles.map((file, index) => (
-                                  <li key={index} className="flex items-center space-x-2">
-                                    {file.type === "application/pdf" && <FileText className="h-4 w-4 text-gray-500" />}
-                                    <span>{file.name}</span>
-                                  </li>
-                                ))}
-                              </ul> */}
-                            </div>
-                          )}
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                    <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white">
-                      <Mail className="mr-2 h-4 w-4" />
-                      Email Form
-                    </Button>
-                  </div>
-                </CardFooter>
-              </Card>
-              {/* <Card className="bg-gradient-to-r from-teal-100 to-blue-100 border-teal-300">
-                <CardHeader>
-                  <CardTitle className="text-green-800">Download Form</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-green-800 mb-4">
-                    Click the button below if you would prefer to download a PDF version of the completed form. 
-                  </p>
-                </CardContent>
-                <CardFooter>
-                  <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white">
-                    <Download className="mr-2 h-4 w-4" />
-                    Download Form
-                  </Button>
-                </CardFooter>
-              </Card> */}
-            </div>
+            <EmailSubmission
+              formDataRef={formDataRef}
+              excalidrawPNG={excalidrawPNG}
+              uploadedFiles={uploadedFiles}
+              generateEmailContent={generateEmailContent}
+            />
           </section>
         </form>
       </div>

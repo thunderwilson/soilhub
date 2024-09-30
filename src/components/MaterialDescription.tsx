@@ -6,6 +6,7 @@ import { Button } from "~/components/ui/button"
 import { ChevronUp, ChevronDown, Minus, Plus } from "lucide-react"
 import { Excalidraw } from "@excalidraw/excalidraw"
 
+// Define the props for the MaterialDescription component
 type MaterialDescriptionProps = {
   formDataRef: React.MutableRefObject<any>;
   updateFormData: (field: string, value: any) => void;
@@ -31,6 +32,7 @@ export function MaterialDescription({
   initialData,
   onExcalidrawChange
 }: MaterialDescriptionProps) {
+  // Function to toggle the visibility of the Excalidraw component
   const handleExcalidrawToggle = (event: React.MouseEvent) => {
     event.preventDefault();
     setIsExcalidrawVisible(!isExcalidrawVisible);
@@ -40,6 +42,7 @@ export function MaterialDescription({
     <section>
       <h2 className="text-3xl font-bold mb-4 text-green-800">Material Description</h2>
       <div className="space-y-4">
+        {/* Site Address Input */}
         <div>
           <Label htmlFor="siteAddress">Site Address</Label>
           <Input 
@@ -48,6 +51,8 @@ export function MaterialDescription({
             onBlur={(e) => updateFormData("siteAddress", e.target.value)}
           />
         </div>
+        
+        {/* Plan of Proposed Works (Excalidraw) */}
         <div>
           <Label htmlFor="planOfWorks">Plan of proposed works (drawing/map/aerial etc.)</Label>
           <Button variant="outline" className="w-full justify-between mb-2" onClick={handleExcalidrawToggle}>
@@ -73,6 +78,8 @@ export function MaterialDescription({
             )}
           </div>
         </div>
+        
+        {/* Site History Textarea */}
         <div>
           <Label htmlFor="siteHistory">History of Site Activity</Label>
           <Textarea 
@@ -82,9 +89,12 @@ export function MaterialDescription({
             className="h-32"
           />
         </div>
+        
+        {/* Expected Consignments Input */}
         <div className="w-full max-w-sm space-y-2">
           <Label htmlFor="expectedConsignments">Expected Consignments</Label>
           <div className="flex items-center space-x-2">
+            {/* Decrease Consignments Button */}
             <Button
               type="button"
               variant="outline"
@@ -94,6 +104,7 @@ export function MaterialDescription({
             >
               <Minus className="h-4 w-4" />
             </Button>
+            {/* Consignments Input */}
             <Input 
               id="expectedConsignments" 
               type="text" 
@@ -103,6 +114,7 @@ export function MaterialDescription({
               onChange={(e) => updateConsignments(parseInt(e.target.value) || 1)}
               className="w-20 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
+            {/* Increase Consignments Button */}
             <Button
               type="button"
               variant="outline"

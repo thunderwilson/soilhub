@@ -8,10 +8,12 @@ import { ChevronUp, ChevronDown } from "lucide-react"
 import { AnalyticalSummaryTable } from "~/components/AnalyticalSummaryTable"
 import { SamplingDetails } from "~/components/SamplingDetails"
 
+// Default list of contaminants to initialize the analytical rows
 const defaultContaminants = [
   "Arsenic", "Cadmium", "Copper", "Chromium", "Mercury", "Nickel", "Zinc", "Asbestos P/A"
 ]
 
+// Props type definition for ConsignmentDetails component
 type ConsignmentDetailProps = {
   index: number;
   formDataRef: React.MutableRefObject<any>;
@@ -20,6 +22,7 @@ type ConsignmentDetailProps = {
   availableContaminants: string[];
 }
 
+// Type definition for an analytical row
 type AnalyticalRow = {
   id: string;
   contaminant: string;
@@ -30,7 +33,10 @@ type AnalyticalRow = {
 }
 
 export function ConsignmentDetails({ index, formDataRef, openSections, toggleSection, availableContaminants }: ConsignmentDetailProps) {
+  // Get existing consignment data or use an empty object
   const consignmentData = formDataRef.current.consignmentDetails[index] || {}
+
+  // Local state for the consignment details
   const [localState, setLocalState] = useState<{
     materialDescription: string;
     expectedDeliveryDate: string;
@@ -58,6 +64,7 @@ export function ConsignmentDetails({ index, formDataRef, openSections, toggleSec
     ...consignmentData
   })
 
+  // Initialize analytical rows with default contaminants if empty
   useEffect(() => {
     if (localState.analyticalRows.length === 0) {
       const initialRows = defaultContaminants.map((contaminant, index) => ({
@@ -72,6 +79,7 @@ export function ConsignmentDetails({ index, formDataRef, openSections, toggleSec
     }
   }, []);
 
+  // Function to update local state and form data reference
   const updateLocalState = (field: string, value: any) => {
     setLocalState(prev => {
       const updated = { ...prev, [field]: value }
@@ -98,6 +106,7 @@ export function ConsignmentDetails({ index, formDataRef, openSections, toggleSec
             <TabsTrigger value="sampling">Sampling Details</TabsTrigger>
             <TabsTrigger value="analytical">Analytical Summary</TabsTrigger>
           </TabsList>
+          {/* Description Tab */}
           <TabsContent value="description" className="space-y-4">
             <div>
               <Label htmlFor={`materialDescription-${index}`}>Material Description</Label>
@@ -145,6 +154,7 @@ export function ConsignmentDetails({ index, formDataRef, openSections, toggleSec
               </div>
             </div>
           </TabsContent>
+          {/* Sampling Details Tab */}
           <TabsContent value="sampling">
             <SamplingDetails
               index={index}
@@ -152,6 +162,7 @@ export function ConsignmentDetails({ index, formDataRef, openSections, toggleSec
               updateLocalState={updateLocalState}
             />
           </TabsContent>
+          {/* Analytical Summary Tab */}
           <TabsContent value="analytical">
             <AnalyticalSummaryTable
               analyticalRows={localState.analyticalRows}
