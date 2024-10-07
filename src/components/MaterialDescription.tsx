@@ -6,7 +6,7 @@ import { Button } from "~/components/ui/button"
 import { ChevronUp, ChevronDown, Minus, Plus } from "lucide-react"
 import { Excalidraw } from "@excalidraw/excalidraw"
 
-// Define the props for the MaterialDescription component
+// Update the props type to remove onExcalidrawChange
 type MaterialDescriptionProps = {
   formDataRef: React.MutableRefObject<any>;
   updateFormData: (field: string, value: any) => void;
@@ -17,7 +17,7 @@ type MaterialDescriptionProps = {
   excalidrawAPI: any;
   setExcalidrawAPI: React.Dispatch<React.SetStateAction<any>>;
   initialData: any;
-  onExcalidrawChange: () => void;
+  // Remove onExcalidrawChange from props
 };
 
 export function MaterialDescription({
@@ -30,7 +30,7 @@ export function MaterialDescription({
   excalidrawAPI,
   setExcalidrawAPI,
   initialData,
-  onExcalidrawChange
+  // Remove onExcalidrawChange from destructuring
 }: MaterialDescriptionProps) {
   // Function to toggle the visibility of the Excalidraw component
   const handleExcalidrawToggle = (event: React.MouseEvent) => {
@@ -62,7 +62,7 @@ export function MaterialDescription({
           <div className={`w-full h-[600px] border border-gray-300 rounded-md overflow-hidden ${isExcalidrawVisible ? '' : 'hidden'}`}>
             {initialData ? (
               <Excalidraw
-                onChange={onExcalidrawChange}
+                // Remove the onChange prop
                 initialData={initialData}
                 excalidrawAPI={(api: any) => setExcalidrawAPI(api)}
                 UIOptions={{

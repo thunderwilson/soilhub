@@ -87,20 +87,24 @@ export function MaterialDescriptionFormComponent() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]) // List of uploaded files
   const [isExcalidrawVisible, setIsExcalidrawVisible] = useState(false) // Flag to show/hide Excalidraw
   const [replyToEmail, setReplyToEmail] = useState("") // Reply-to email address
+  const [excalidrawImageUrl, setExcalidrawImageUrl] = useState<string | null>(null);
+  const [emailContent, setEmailContent] = useState<string | null>(null);
 
-  // Effect to load the tutorial image for Excalidraw
+  // Modify the useEffect for loading tutorial data
   useEffect(() => {
-    fetch("/tutorial.excalidraw")
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("Loaded tutorial data:", data);
-        setInitialData(data);
-      })
-      .catch((error) => console.error("Error loading tutorial data:", error));
-  }, []);
+    if (!initialData) {  // Only load if not already loaded
+      fetch("/tutorial.excalidraw")
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("Loaded tutorial data:", data);
+          setInitialData(data);
+        })
+        .catch((error) => console.error("Error loading tutorial data:", error));
+    }
+  }, [initialData]);
 
-  // Function to capture Excalidraw drawing as PNG
-  const captureExcalidrawPNG = async () => {
+  const captureExcalidrawPNG = async (): Promise<string | null> => {
+    console.log("captureExcalidrawPNG called");
     if (excalidrawAPI) {
       try {
         const elements = excalidrawAPI.getSceneElements();
@@ -114,18 +118,38 @@ export function MaterialDescriptionFormComponent() {
           mimeType: "image/png",
           quality: 1,
         });
-        const url = URL.createObjectURL(blob);
-        setExcalidrawPNG(url);
-        console.log("Excalidraw PNG generated:", url);
+
+        // Convert blob to base64
+        const base64data = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+
+        console.log("Uploading Excalidraw image...");
+        const response = await fetch('/api/upload-excalidraw', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ image: base64data }),
+        });
+
+        if (response.ok) {
+          const { url } = await response.json();
+          console.log("Excalidraw image uploaded successfully:", url);
+          return url;
+        } else {
+          const errorData = await response.json();
+          console.error("Failed to upload image:", errorData);
+          return null;
+        }
       } catch (error) {
-        console.error("Error generating Excalidraw PNG:", error);
+        console.error("Error generating or uploading Excalidraw PNG:", error);
+        return null;
       }
     }
-  };
-
-  // Function to handle changes in Excalidraw
-  const onExcalidrawChange = () => {
-    console.log("Excalidraw changed");
+    return null;
   };
 
   // Effect to clean up the URL object for Excalidraw PNG
@@ -159,8 +183,14 @@ export function MaterialDescriptionFormComponent() {
     updateFormData("expectedConsignments", validValue)
   }
 
-  const generateEmailContent = () => {
+  const generateEmailContent = async () => {
+    console.log("generateEmailContent called");
+    if (emailContent) {
+      return emailContent; // Return cached content if available
+    }
     const formData = formDataRef.current;
+    let excalidrawImageUrl = await captureExcalidrawPNG();
+    
     let content = `
       <html>
         <head>
@@ -175,7 +205,7 @@ export function MaterialDescriptionFormComponent() {
           </style>
         </head>
         <body>
-          <h1></h1>
+          <h1>Surplus Soil Information Sheet</h1>
           
           <div class="section">
             <h2>Site Information</h2>
@@ -186,8 +216,8 @@ export function MaterialDescriptionFormComponent() {
 
           <div class="section">
             <h2>Plan of Proposed Works</h2>
-            ${excalidrawPNG 
-              ? `<img src="${excalidrawPNG}" alt="Plan of Proposed Works" style="max-width: 100%; height: auto;">`
+            ${excalidrawImageUrl 
+              ? `<img src="${excalidrawImageUrl}" alt="Plan of Proposed Works" style="max-width: 100%; height: auto;">`
               : '<p>No plan uploaded. Please draw a plan using the Excalidraw tool.</p>'}
           </div>
     `;
@@ -258,12 +288,19 @@ export function MaterialDescriptionFormComponent() {
     });
 
     content += `
-        </body>
-      </html>
-    `;
+          </body>
+        </html>
+      `;
 
+    setEmailContent(content); // Cache the generated content
     return content;
-  }
+  };
+
+  // Function to clear the cached email content when form data changes
+  const updateFormDataAndClearCache = (field: string, value: any) => {
+    updateFormData(field, value);
+    setEmailContent(null); // Clear the cached email content
+  };
 
   const addEmail = () => {
     if (currentEmail && !destinationEmails.includes(currentEmail)) {
@@ -301,7 +338,7 @@ export function MaterialDescriptionFormComponent() {
         <form className="space-y-8 bg-white bg-opacity-80 backdrop-blur-md rounded-lg shadow-xl p-6">
           <MaterialDescription
             formDataRef={formDataRef}
-            updateFormData={updateFormData}
+            updateFormData={updateFormDataAndClearCache}
             consignments={consignments}
             updateConsignments={updateConsignments}
             isExcalidrawVisible={isExcalidrawVisible}
@@ -309,7 +346,6 @@ export function MaterialDescriptionFormComponent() {
             excalidrawAPI={excalidrawAPI}
             setExcalidrawAPI={setExcalidrawAPI}
             initialData={initialData}
-            onExcalidrawChange={onExcalidrawChange}
           />
 
           <section>
@@ -332,7 +368,6 @@ export function MaterialDescriptionFormComponent() {
             <h2 className="text-3xl font-bold mb-4 text-green-800">Submit Form</h2>
             <EmailSubmission
               formDataRef={formDataRef}
-              excalidrawPNG={excalidrawPNG}
               uploadedFiles={uploadedFiles}
               generateEmailContent={generateEmailContent}
             />
@@ -341,6 +376,13 @@ export function MaterialDescriptionFormComponent() {
       </div>
 
       <Footer />
+
+      {excalidrawImageUrl && (
+        <div>
+          <h3>Uploaded Excalidraw Image:</h3>
+          <img src={excalidrawImageUrl} alt="Excalidraw" style={{ maxWidth: '100%' }} />
+        </div>
+      )}
     </div>
   )
 }

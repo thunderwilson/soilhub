@@ -17,12 +17,13 @@ type EmailSubmissionProps = {
   generateEmailContent: () => string;
 };
 
-export function EmailSubmission({ formDataRef, excalidrawPNG, uploadedFiles, generateEmailContent }: EmailSubmissionProps) {
+export function EmailSubmission({ formDataRef, uploadedFiles, generateEmailContent }: EmailSubmissionProps) {
   // State for managing email addresses
   const [destinationEmails, setDestinationEmails] = useState<string[]>([]);
   const [currentEmail, setCurrentEmail] = useState("");
   const [customMessage, setCustomMessage] = useState("");
   const [replyToEmail, setReplyToEmail] = useState("");
+  const [previewContent, setPreviewContent] = useState<string | null>(null);
 
   // Function to add an email to the list of destination emails
   const addEmail = () => {
@@ -37,11 +38,19 @@ export function EmailSubmission({ formDataRef, excalidrawPNG, uploadedFiles, gen
     setDestinationEmails(destinationEmails.filter(e => e !== email));
   };
 
+  // Function to handle preview
+  const handlePreview = async () => {
+    if (!previewContent) {
+      const content = await generateEmailContent();
+      setPreviewContent(content);
+    }
+  };
+
   // Function to handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const emailContent = generateEmailContent();
+    const emailContent = previewContent || await generateEmailContent();
 
     // Prepare the form data to be sent
     const formData = {
@@ -197,6 +206,7 @@ export function EmailSubmission({ formDataRef, excalidrawPNG, uploadedFiles, gen
                 type="button" 
                 variant="outline" 
                 className="w-full bg-green-200 hover:bg-green-300 text-green-800 border-green-400"
+                onClick={handlePreview}
               >
                 <Eye className="mr-2 h-4 w-4" />
                 Preview Email
@@ -211,7 +221,7 @@ export function EmailSubmission({ formDataRef, excalidrawPNG, uploadedFiles, gen
                 <h3 className="font-bold">Reply To: {replyToEmail}</h3>
                 <h3 className="font-bold mt-2">Custom Message:</h3>
                 <p>{customMessage}</p>
-                <div dangerouslySetInnerHTML={{ __html: generateEmailContent() }} />
+                {previewContent && <div dangerouslySetInnerHTML={{ __html: previewContent }} />}
               </div>
             </DialogContent>
           </Dialog>
