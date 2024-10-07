@@ -25,6 +25,7 @@ import { Instructions } from '~/components/Instructions'
 import { MaterialDescription } from '~/components/MaterialDescription'
 import { ConsignmentDetails } from '~/components/ConsignmentDetails'
 import { EmailSubmission } from '~/components/EmailSubmission'
+import { FileUpload } from "~/components/FileUpload";
 
 // Default list of contaminants
 const defaultContaminants = [
@@ -72,11 +73,13 @@ export function MaterialDescriptionFormComponent() {
   const [consignments, setConsignments] = useState(1) // Number of consignments
   const [openSections, setOpenSections] = useState<number[]>([]) // Sections that are open
   const formDataRef = useRef<{
+    attachments: any[]
     siteAddress: string;
     siteHistory: string;
     expectedConsignments: number;
     consignmentDetails: ConsignmentDetail[];
   }>({
+    attachments: [],
     siteAddress: "",
     siteHistory: "",
     expectedConsignments: 1,
@@ -391,6 +394,15 @@ export function MaterialDescriptionFormComponent() {
                 />
               ))}
             </div>
+          </section>
+
+          <section>
+            <h2 className="text-3xl font-bold mb-4 text-green-800">Attachments</h2>
+            <FileUpload onUploadComplete={(files) => {
+              // Handle the uploaded files, e.g., add them to formDataRef
+              formDataRef.current.attachments = [...(formDataRef.current.attachments || []), ...files];
+              setEmailContent(null); // Clear the cached email content
+            }} />
           </section>
 
           <section>
