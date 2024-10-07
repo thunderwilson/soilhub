@@ -71,18 +71,23 @@ export function MaterialDescriptionFormComponent() {
   // State variables
   const [consignments, setConsignments] = useState(1) // Number of consignments
   const [openSections, setOpenSections] = useState<number[]>([]) // Sections that are open
-  const formDataRef = useRef({
+  const formDataRef = useRef<{
+    siteAddress: string;
+    siteHistory: string;
+    expectedConsignments: number;
+    consignmentDetails: ConsignmentDetail[];
+  }>({
     siteAddress: "",
     siteHistory: "",
     expectedConsignments: 1,
-    consignmentDetails: [] as ConsignmentDetail[],
+    consignmentDetails: [],
   }) // Reference to form data
   const [destinationEmails, setDestinationEmails] = useState<string[]>([]) // List of destination emails
   const [currentEmail, setCurrentEmail] = useState("") // Current email being added
   const [customMessage, setCustomMessage] = useState("") // Custom message for the email
   const [showEmailPreview, setShowEmailPreview] = useState(false) // Flag to show email preview
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null) // Excalidraw API instance
-  const [initialData, setInitialData] = useState(null) // Initial data for Excalidraw
+  const [initialData, setInitialData] = useState<any>(null) // Initial data for Excalidraw
   const [excalidrawPNG, setExcalidrawPNG] = useState<string | null>(null) // PNG data for Excalidraw
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]) // List of uploaded files
   const [isExcalidrawVisible, setIsExcalidrawVisible] = useState(false) // Flag to show/hide Excalidraw
@@ -116,7 +121,6 @@ export function MaterialDescriptionFormComponent() {
           appState,
           files,
           mimeType: "image/png",
-          quality: 1,
         });
 
         // Convert blob to base64
@@ -169,7 +173,7 @@ export function MaterialDescriptionFormComponent() {
   }
 
   // Function to update form data
-  const updateFormData = (field: string, value: any) => {
+  const updateFormData = (field: keyof typeof formDataRef.current, value: any) => {
     formDataRef.current = {
       ...formDataRef.current,
       [field]: value,
@@ -183,7 +187,7 @@ export function MaterialDescriptionFormComponent() {
     updateFormData("expectedConsignments", validValue)
   }
 
-  const generateEmailContent = async () => {
+  const generateEmailContent = async (): Promise<string> => {
     console.log("generateEmailContent called");
     if (emailContent) {
       return emailContent; // Return cached content if available
@@ -297,7 +301,7 @@ export function MaterialDescriptionFormComponent() {
   };
 
   // Function to clear the cached email content when form data changes
-  const updateFormDataAndClearCache = (field: string, value: any) => {
+  const updateFormDataAndClearCache = (field: keyof typeof formDataRef.current, value: any) => {
     updateFormData(field, value);
     setEmailContent(null); // Clear the cached email content
   };
@@ -314,7 +318,7 @@ export function MaterialDescriptionFormComponent() {
   }
 
   const onDrop = (acceptedFiles: File[]) => {
-    setUploadedFiles([...uploadedFiles, ...acceptedFiles]);
+    setUploadedFiles(prevFiles => [...prevFiles, ...acceptedFiles]);
   };
 
   const removeFile = (fileName: string) => {
@@ -323,8 +327,8 @@ export function MaterialDescriptionFormComponent() {
 
   const { getRootProps, getInputProps } = useDropzone({ onDrop });
 
-  const handleExcalidrawToggle = (event: { preventDefault: () => void }) => {
-    event.preventDefault(); // Prevent form submission
+  const handleExcalidrawToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
     setIsExcalidrawVisible(!isExcalidrawVisible);
   };
 
@@ -338,7 +342,7 @@ export function MaterialDescriptionFormComponent() {
         <form className="space-y-8 bg-white bg-opacity-80 backdrop-blur-md rounded-lg shadow-xl p-6">
           <MaterialDescription
             formDataRef={formDataRef}
-            updateFormData={updateFormDataAndClearCache}
+            updateFormData={(field: string, value: any) => updateFormDataAndClearCache(field as "siteAddress" | "siteHistory" | "expectedConsignments" | "consignmentDetails", value)}
             consignments={consignments}
             updateConsignments={updateConsignments}
             isExcalidrawVisible={isExcalidrawVisible}

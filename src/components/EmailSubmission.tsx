@@ -4,7 +4,7 @@ import { Input } from "~/components/ui/input"
 import { Label } from "~/components/ui/label"
 import { Textarea } from "~/components/ui/textarea"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "~/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "~/components/ui/dialog"
 import { Badge } from "~/components/ui/badge"
 import { Mail, Eye, X } from "lucide-react"
 import axios from 'axios';
@@ -12,9 +12,8 @@ import axios from 'axios';
 // Define the props for the EmailSubmission component
 type EmailSubmissionProps = {
   formDataRef: React.MutableRefObject<any>;
-  excalidrawPNG: string | null;
   uploadedFiles: File[];
-  generateEmailContent: () => string;
+  generateEmailContent: () => Promise<string>;
 };
 
 export function EmailSubmission({ formDataRef, uploadedFiles, generateEmailContent }: EmailSubmissionProps) {
@@ -215,6 +214,9 @@ export function EmailSubmission({ formDataRef, uploadedFiles, generateEmailConte
             <DialogContent className="max-w-[800px] max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-xl font-bold text-green-800">Email Preview</DialogTitle>
+                <DialogDescription>
+                  This is a preview of the email that will be sent.
+                </DialogDescription>
               </DialogHeader>
               <div className="mt-4 p-4">
                 <h3 className="font-bold">To: {destinationEmails.join(", ")}</h3>
