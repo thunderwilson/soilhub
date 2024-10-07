@@ -13,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "~/components/ui/card"
 import { ChevronDown, ChevronUp, Download,Plus, X, Mail, Eye, MinusIcon, PlusIcon, FileText } from "lucide-react"
-import { Excalidraw, exportToBlob, exportToSvg } from "@excalidraw/excalidraw"
+import { Excalidraw, exportToBlob, exportToSvg, loadLibraryFromBlob } from "@excalidraw/excalidraw"
 import { Badge } from "~/components/ui/badge"
 import { useDropzone } from 'react-dropzone'
 import axios from 'axios';
@@ -100,8 +100,33 @@ export function MaterialDescriptionFormComponent() {
     if (!initialData) {  // Only load if not already loaded
       fetch("/tutorial.excalidraw")
         .then((response) => response.json())
-        .then((data) => {
+        .then(async (data) => {
           console.log("Loaded tutorial data:", data);
+          
+          // Set font for all elements
+          if (data.elements) {
+            data.elements = data.elements.map((element: any) => ({
+              ...element,
+              fontFamily: 1, // 1 corresponds to Virgil, the default Excalidraw font
+            }));
+          }
+          
+          // Log font information
+          if (data.appState && data.appState.currentItemFontFamily) {
+            console.log("Font family in tutorial data:", data.appState.currentItemFontFamily);
+          }
+          
+          // Load custom fonts if any
+          if (data.libraryItems) {
+            try {
+              const libraryItems = await loadLibraryFromBlob(new Blob([JSON.stringify(data.libraryItems)]));
+              data.libraryItems = libraryItems;
+              console.log("Loaded library items:", libraryItems);
+            } catch (error) {
+              console.error("Error loading library items:", error);
+            }
+          }
+          
           setInitialData(data);
         })
         .catch((error) => console.error("Error loading tutorial data:", error));
