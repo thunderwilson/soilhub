@@ -9,10 +9,10 @@ import { Badge } from "~/components/ui/badge"
 import { Mail, Eye, X } from "lucide-react"
 import axios from 'axios';
 
-// Define the props for the EmailSubmission component
+// Update the props to include attachment URLs
 type EmailSubmissionProps = {
   formDataRef: React.MutableRefObject<any>;
-  uploadedFiles: File[];
+  uploadedFiles: { file: File; url: string }[]; // Change this line
   generateEmailContent: () => Promise<string>;
 };
 
@@ -81,10 +81,11 @@ export function EmailSubmission({ formDataRef, uploadedFiles, generateEmailConte
         },
         analyticalSummary: consignment.analyticalRows,
       })),
-      attachments: uploadedFiles.map(file => ({
+      attachments: uploadedFiles.map(({ file, url }) => ({
         name: file.name,
         type: file.type,
         size: file.size,
+        url: url, // Include the URL of the uploaded file
       })),
       htmlContent: emailContent,
     };

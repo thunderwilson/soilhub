@@ -10,25 +10,34 @@ import type { OurFileRouter } from "~/app/api/uploadthing/core";
 export const { useUploadThing, uploadFiles } =
   generateReactHelpers<OurFileRouter>();
 
-export function FileUpload({ onUploadComplete }: { onUploadComplete: (files: string[]) => void }) {
+export function FileUpload({ onUploadComplete }: { onUploadComplete: (files: File[], urls: string[]) => void }) {
   const [files, setFiles] = useState<File[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<Array<{ url: string, name: string }>>([]); // Changed type
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{ url: string, name: string }>>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const { startUpload, isUploading } = useUploadThing("fileUploader", {
     onClientUploadComplete: (res) => {
-      const uploadedInfo = res?.map((file) => ({ url: file.url, name: file.name })) || [];
-      setUploadedFiles((prev) => [...prev, ...uploadedInfo]);
-      onUploadComplete(uploadedInfo.map(file => file.url));
+      if (res && res.length > 0) {
+        const uploadedInfo = res.map((file) => ({ url: file.url, name: file.name }));
+        setUploadedFiles((prev) => [...prev, ...uploadedInfo]);
+        onUploadComplete(files, uploadedInfo.map(file => file.url));
+        setFiles([]);
+      } else {
+        setError("Upload completed, but no file information was returned.");
+      }
     },
     onUploadError: (error: Error) => {
-      alert(`ERROR! ${error.message}`);
+      console.error("Upload error:", error);
+      setError(`Upload failed: ${error.message}`);
     },
   });
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop: (acceptedFiles) => {
       setFiles((prevFiles) => [...prevFiles, ...acceptedFiles]);
+      setError(null);
     },
+    multiple: true, // Allow multiple file selection
   });
 
   const removeFile = (index: number) => {
@@ -36,8 +45,16 @@ export function FileUpload({ onUploadComplete }: { onUploadComplete: (files: str
   };
 
   const handleUpload = async () => {
-    await startUpload(files);
-    setFiles([]);
+    try {
+      if (files.length === 0) {
+        setError("Please select files to upload.");
+        return;
+      }
+      await startUpload(files);
+    } catch (error) {
+      console.error("Error during upload:", error);
+      setError(`An unexpected error occurred during upload. Please try again.`);
+    }
   };
 
   return (
@@ -59,6 +76,11 @@ export function FileUpload({ onUploadComplete }: { onUploadComplete: (files: str
           <Button onClick={handleUpload} disabled={isUploading}>
             {isUploading ? "Uploading..." : "Upload Files"}
           </Button>
+        </div>
+      )}
+      {error && (
+        <div className="text-red-500 mt-2">
+          {error}
         </div>
       )}
       {uploadedFiles.length > 0 && (

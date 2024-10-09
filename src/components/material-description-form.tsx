@@ -92,7 +92,7 @@ export function MaterialDescriptionFormComponent() {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null) // Excalidraw API instance
   const [initialData, setInitialData] = useState<any>(null) // Initial data for Excalidraw
   const [excalidrawPNG, setExcalidrawPNG] = useState<string | null>(null) // PNG data for Excalidraw
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]) // List of uploaded files
+  const [uploadedFiles, setUploadedFiles] = useState<{ file: File; url: string }[]>([]) // List of uploaded files
   const [isExcalidrawVisible, setIsExcalidrawVisible] = useState(false) // Flag to show/hide Excalidraw
   const [replyToEmail, setReplyToEmail] = useState("") // Reply-to email address
   const [excalidrawImageUrl, setExcalidrawImageUrl] = useState<string | null>(null);
@@ -346,11 +346,14 @@ export function MaterialDescriptionFormComponent() {
   }
 
   const onDrop = (acceptedFiles: File[]) => {
-    setUploadedFiles(prevFiles => [...prevFiles, ...acceptedFiles]);
+    setUploadedFiles(prevFiles => [
+      ...prevFiles,
+      ...acceptedFiles.map(file => ({ file, url: URL.createObjectURL(file) }))
+    ]);
   };
 
   const removeFile = (fileName: string) => {
-    setUploadedFiles(uploadedFiles.filter(file => file.name !== fileName));
+    setUploadedFiles(uploadedFiles.filter(file => file.file.name !== fileName));
   };
 
   const { getRootProps, getInputProps } = useDropzone({ onDrop });
@@ -358,6 +361,16 @@ export function MaterialDescriptionFormComponent() {
   const handleExcalidrawToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     setIsExcalidrawVisible(!isExcalidrawVisible);
+  };
+
+  // Update this function to include both files and URLs
+  const onFileUpload = (files: File[], urls: string[]) => {
+    const newUploadedFiles = files.map((file, index) => ({
+      file,
+      url: urls[index] || ''
+    }));
+    setUploadedFiles(prevFiles => [...prevFiles, ...newUploadedFiles]);
+    setEmailContent(null); // Clear the cached email content
   };
 
   return (
@@ -398,11 +411,7 @@ export function MaterialDescriptionFormComponent() {
 
           <section>
             <h2 className="text-3xl font-bold mb-4 text-green-800">Attachments</h2>
-            <FileUpload onUploadComplete={(files) => {
-              // Handle the uploaded files, e.g., add them to formDataRef
-              formDataRef.current.attachments = [...(formDataRef.current.attachments || []), ...files];
-              setEmailContent(null); // Clear the cached email content
-            }} />
+            <FileUpload onUploadComplete={onFileUpload} />
           </section>
 
           <section>
