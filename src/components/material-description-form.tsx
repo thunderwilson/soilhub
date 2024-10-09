@@ -106,12 +106,17 @@ export function MaterialDescriptionFormComponent() {
         .then(async (data) => {
           console.log("Loaded tutorial data:", data);
           
-          // Set font for all elements
+          // Set font for all elements to a normal font
           if (data.elements) {
             data.elements = data.elements.map((element: any) => ({
               ...element,
-              fontFamily: 1, // 1 corresponds to Virgil, the default Excalidraw font
+              fontFamily: 2, // 2 corresponds to Helvetica, a normal font
             }));
+          }
+          
+          // Set the default font in appState
+          if (data.appState) {
+            data.appState.currentItemFontFamily = 2; // Set default font to Helvetica
           }
           
           // Log font information
